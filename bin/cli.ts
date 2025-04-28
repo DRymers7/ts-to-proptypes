@@ -12,7 +12,9 @@ const project = new Project({
 /**
  * Adding all source components to the project.
  */
-project.addSourceFilesAtPaths('src/**/*.tsx');
+project.addSourceFilesAtPaths([
+    'src/**/*.tsx', 
+]);
 
 /**
  * Getting the source files.
@@ -22,7 +24,7 @@ const sourceFiles = project.getSourceFiles();
 /**
  * Calling parseComponents() on each source file.
  */
-for (const sourceFile of sourceFiles) {
+sourceFiles.forEach((sourceFile) => {
     const components = parseComponents(sourceFile);
     console.log(components);
-}
+});
