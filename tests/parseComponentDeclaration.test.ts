@@ -1,27 +1,94 @@
-import {describe, it, expect, expectTypeOf} from 'vitest';
-import parseComponentDeclaration from '../src/parseComponentDeclaration';
+import {describe, it, expect} from 'vitest';
 import {Project} from 'ts-morph';
-import extractPropsFromParameter from '../src/extractPropsFromParameter';
+import parseComponentDeclaration from '../src/parseComponentDeclaration';
+import ts from 'typescript';
 
-const createMockParameterFromText = (code: string) => {
+const createMockFunctionComponent = (code: string) => {
     const project = new Project();
     const sourceFile = project.createSourceFile('TestComponent.tsx', code);
-    project.createSourceFile('test.txt', code);
     const func = sourceFile.getFunctions()[0];
-    return func.getParameters()[0];
+    return {func, sourceFile};
 };
 
-describe('parseComponentDeclaration tests', () => {
-    it('should extract simmple props correctly', () => {
-        const param = createMockParameterFromText(`
-            type: Props = { name: string };
-            function HelloWorld({ name }: Props) {}
-            `);
-        const extractedProps = extractPropsFromParameter(param);
-        expect(extractedProps).toEqual({
-            name: 'name',
-            type: 'string',
-            required: true,
+const createMockArrowFunctionComponent = (code: string) => {
+    const project = new Project();
+    const sourceFile = project.createSourceFile('TestArrowComponent.tsx', code);
+    const variable = sourceFile.getVariableDeclarationOrThrow('HelloWorld');
+    const func = variable.getInitializerIfKindOrThrow(
+        ts.SyntaxKind.ArrowFunction
+    );
+    return {func, sourceFile};
+};
+
+const createMockDefaultFunctionComponent = (code: string) => {
+    const project = new Project();
+    const sourceFile = project.createSourceFile(
+        'TestDefaultComponent.tsx',
+        code
+    );
+    const func = sourceFile.getFunctions()[0];
+    return {func, sourceFile};
+};
+
+describe('parseComponentDeclaration', () => {
+    it('should extract props from a function component', () => {
+        const {func, sourceFile} = createMockFunctionComponent(`
+      type Props = { name: string };
+      export function HelloWorld({ name }: Props) {
+        return <div>{name}</div>;
+      }
+    `);
+
+        const result = parseComponentDeclaration(
+            'HelloWorld',
+            func,
+            sourceFile.getFilePath()
+        );
+
+        expect(result).toEqual({
+            name: 'HelloWorld',
+            sourceFilePath: expect.any(String),
+            props: [{name: 'name', type: 'string', required: true}],
+        });
+    });
+    it('should extract props from an arrow function component', () => {
+        const {func, sourceFile} = createMockArrowFunctionComponent(`
+            type Props = { name: string };
+            export const HelloWorld = ({ name }: Props) => {
+              return (<div>{name}</div>);
+            };
+          `);
+
+        const result = parseComponentDeclaration(
+            'HelloWorld',
+            func,
+            sourceFile.getFilePath()
+        );
+
+        expect(result).toEqual({
+            name: 'HelloWorld',
+            sourceFilePath: expect.any(String),
+            props: [{name: 'name', type: 'string', required: true}],
+        });
+    });
+    it('should extract props from a default exported function component', () => {
+        const {func, sourceFile} = createMockDefaultFunctionComponent(`
+          type Props = { title: string };
+          export default function HelloWorld({ title }: Props) {
+            return (<div>{title}</div>);
+          }
+        `);
+
+        const result = parseComponentDeclaration(
+            'default', // name from export
+            func,
+            sourceFile.getFilePath()
+        );
+
+        expect(result).toEqual({
+            name: 'default',
+            sourceFilePath: expect.any(String),
+            props: [{name: 'title', type: 'string', required: true}],
         });
     });
 });

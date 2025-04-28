@@ -27,12 +27,12 @@ describe('normalizePropType', () => {
     });
 
     it('should normalize object/record types', () => {
-        const objectType = createTypeFromText('Record<string, number>'); 
+        const objectType = createTypeFromText('Record<string, number>');
         expect(normalizePropType(objectType)).toBe('object');
     });
 
     it('should normalize function types', () => {
-        const functionType = createTypeFromText('() => void'); 
+        const functionType = createTypeFromText('() => void');
         expect(normalizePropType(functionType)).toBe('function');
     });
 
