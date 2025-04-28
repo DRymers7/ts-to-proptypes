@@ -16,26 +16,37 @@ function parseComponentDeclaration(
     declaration: Node,
     filePath: string
 ): ComponentInfo | null {
-    if (
-        Node.isFunctionDeclaration(declaration) ||
-        Node.isArrowFunction(declaration)
-    ) {
+    // Handle direct function declarations
+    if (Node.isFunctionDeclaration(declaration)) {
         const params = declaration.getParameters();
         if (params.length === 0) return null;
 
         const props = extractPropsFromParameter(params[0]);
-
-        return {
-            name,
-            props,
-            sourceFilePath: filePath,
-        };
-    } else if (Node.isVariableDeclaration(declaration)) { 
-        
-    } else if (Node.isClassDeclaration(declaration)) {
-        // TODO: implement class declaration extraction for props
-        return null;
+        return {name, props, sourceFilePath: filePath};
     }
+
+    // Handle direct arrow functions
+    if (Node.isArrowFunction(declaration)) {
+        const params = declaration.getParameters();
+        if (params.length === 0) return null;
+
+        const props = extractPropsFromParameter(params[0]);
+        return {name, props, sourceFilePath: filePath};
+    }
+
+    // 🛠 Handle VariableDeclarations whose initializer is an ArrowFunction
+    if (Node.isVariableDeclaration(declaration)) {
+        const initializer = declaration.getInitializer();
+        if (initializer && Node.isArrowFunction(initializer)) {
+            const params = initializer.getParameters();
+            if (params.length === 0) return null;
+
+            const props = extractPropsFromParameter(params[0]);
+            return {name, props, sourceFilePath: filePath};
+        }
+    }
+
+    // Not a supported component
     return null;
 }
 

@@ -1,7 +1,9 @@
 import {Type} from 'ts-morph';
 
 /**
- * // TODO: update docs
+ * Standardizes the raw type provided by the Node, into a traditional TS type. This
+ * is for the purpose of simplifying type variance. Will default to 'any' if the
+ * TS compiler is unable to determine the type.
  *
  * @param typeString raw string value returned from prop call to .getTypeAtLocation(param).getText()
  * @returns string value of prop type, normalized for easier use
