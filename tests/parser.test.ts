@@ -1,35 +1,56 @@
 import {describe, it, expect} from 'vitest';
 import {parseComponents} from '../src/parser';
+import {Project} from 'ts-morph';
 
-describe('parseComponents', () => {
-    it('should parse a basic function component with props', async () => {
-        const components = await parseComponents(
-            'input_files/BasicComponentInput.tsx'
-        );
+const createMockSourceFile = (code: string) => {
+    const project = new Project();
+    const sourceFile = project.createSourceFile('TestFile.tsx', code);
+    return sourceFile;
+};
 
-        expect(components.length).toBe(1);
-        expect(components[0]).toEqual({
-            name: 'HelloWorld',
-            sourceFilePath: expect.any(String),
-            props: [
-                {name: 'name', type: 'string', required: true},
-                {name: 'age', type: 'number', required: true},
-            ],
-        });
+describe('parserTests', () => {
+    it('should extract all components and their props from a file', async () => {
+        const sourceFile = createMockSourceFile(`
+      type HelloProps = { name: string };
+      export function HelloWorld({ name }: HelloProps) {
+        return <div>Hello {name}</div>;
+      }
+
+      type CardProps = { title: string; description?: string };
+      export const Card = ({ title, description }: CardProps) => {
+        return <div>{title} - {description}</div>;
+      };
+
+      export const NotAComponent = 42;
+    `);
+
+        const components = await parseComponents(sourceFile);
+
+        expect(components).toEqual([
+            {
+                name: 'HelloWorld',
+                sourceFilePath: expect.any(String),
+                props: [{name: 'name', type: 'string', required: true}],
+            },
+            {
+                name: 'Card',
+                sourceFilePath: expect.any(String),
+                props: [
+                    {name: 'title', type: 'string', required: true},
+                    {name: 'description', type: 'string', required: false},
+                ],
+            },
+        ]);
     });
 
-    it('should handle optional props correctly', async () => {
-        const components = await parseComponents('examples/optional.tsx');
+    it('should return an empty array if no components are found', async () => {
+        const sourceFile = createMockSourceFile(`
+      const something = 123;
+      const anotherThing = () => 456;
+    `);
 
-        expect(components[0].props).toContainEqual({
-            name: 'title',
-            type: 'string',
-            required: false,
-        });
-    });
+        const components = await parseComponents(sourceFile);
 
-    it('should ignore files with no components', async () => {
-        const components = await parseComponents('examples/no-components.tsx');
-        expect(components.length).toBe(0);
+        expect(components).toEqual([]);
     });
 });
