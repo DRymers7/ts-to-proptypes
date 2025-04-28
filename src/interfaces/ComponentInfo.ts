@@ -8,6 +8,6 @@ import {ParsedProp} from './ParsedProp';
  */
 export interface ComponentInfo {
     name: string;
-    propse: ParsedProp[];
+    props: ParsedProp[];
     sourceFilePath: string;
 }

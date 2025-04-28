@@ -6,6 +6,8 @@
         "dev": "tsx bin/cli.ts",
         "build": "tsc",
         "test": "vitest",
+        "test:ui": "vitest --ui",
+        "test:watch": "vitest --watch",
         "format": "prettier . --write"
     },
     "keywords": [],
@@ -13,6 +15,7 @@
     "license": "ISC",
     "description": "",
     "devDependencies": {
+        "@vitest/ui": "^3.1.2",
         "react": "^19.1.0",
         "ts-morph": "^25.0.1",
         "tsx": "^4.19.3",

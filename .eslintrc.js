@@ -7,7 +7,7 @@ module.exports = {
     },
     extends: [
         'airbnb-base', // Airbnb JS style guide
-        'prettier'     // Prettier compatibility
+        'prettier', // Prettier compatibility
     ],
     parserOptions: {
         ecmaVersion: 12,
@@ -17,35 +17,42 @@ module.exports = {
         indent: ['error', 4],
         'object-curly-spacing': ['error', 'never'],
         'no-console': 'off',
-        'import/extensions': ['error', 'ignorePackages', {
-            js: 'always',
-            jsx: 'never'
-        }],
-        'space-before-function-paren': ['error', {
-            anonymous: 'always',
-            named: 'never',
-            asyncArrow: 'always'
-        }],
+        'import/extensions': [
+            'error',
+            'ignorePackages',
+            {
+                js: 'always',
+                jsx: 'never',
+            },
+        ],
+        'space-before-function-paren': [
+            'error',
+            {
+                anonymous: 'always',
+                named: 'never',
+                asyncArrow: 'always',
+            },
+        ],
     },
     overrides: [
         {
             // Target all test and setup files
             files: [
-                '**/*.test.js', 
-                '**/*.spec.js', 
-                '**/jest-setup.js', 
-                '**/setup.js', 
+                '**/*.test.js',
+                '**/*.spec.js',
+                '**/jest-setup.js',
+                '**/setup.js',
                 'tests/**/*.js',
-                'jest.config.js'
+                'jest.config.js',
             ],
             env: {
                 // Add Jest environment
-                jest: true
+                jest: true,
             },
             rules: {
                 // Disable the no-extraneous-dependencies rule for test files
-                'import/no-extraneous-dependencies': 'off'
-            }
-        }
-    ]
+                'import/no-extraneous-dependencies': 'off',
+            },
+        },
+    ],
 };
