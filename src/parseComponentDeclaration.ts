@@ -3,6 +3,29 @@ import {Node} from 'ts-morph';
 import extractPropsFromParameter from './extractPropsFromParameter';
 
 /**
+ * Creates the ComponentInfo object from the extracted props.
+ *
+ * @param name // todo
+ * @param params
+ * @param filePath
+ * @returns
+ */
+function buildComponentInfo(
+    name: string,
+    params: import('ts-morph').ParameterDeclaration[],
+    filePath: string
+): ComponentInfo | null {
+    if (params.length === 0) return null;
+
+    const props = extractPropsFromParameter(params[0]);
+    return {
+        name,
+        props,
+        sourceFilePath: filePath,
+    };
+}
+
+/**
  * Parses the given component declaration, differentiating between Functions/ArrowFunctions
  * and Class Declarations.
  *
@@ -16,37 +39,25 @@ function parseComponentDeclaration(
     declaration: Node,
     filePath: string
 ): ComponentInfo | null {
-    // Handle direct function declarations
     if (Node.isFunctionDeclaration(declaration)) {
-        const params = declaration.getParameters();
-        if (params.length === 0) return null;
-
-        const props = extractPropsFromParameter(params[0]);
-        return {name, props, sourceFilePath: filePath};
+        return buildComponentInfo(name, declaration.getParameters(), filePath);
     }
 
-    // Handle direct arrow functions
     if (Node.isArrowFunction(declaration)) {
-        const params = declaration.getParameters();
-        if (params.length === 0) return null;
-
-        const props = extractPropsFromParameter(params[0]);
-        return {name, props, sourceFilePath: filePath};
+        return buildComponentInfo(name, declaration.getParameters(), filePath);
     }
 
-    // 🛠 Handle VariableDeclarations whose initializer is an ArrowFunction
     if (Node.isVariableDeclaration(declaration)) {
         const initializer = declaration.getInitializer();
         if (initializer && Node.isArrowFunction(initializer)) {
-            const params = initializer.getParameters();
-            if (params.length === 0) return null;
-
-            const props = extractPropsFromParameter(params[0]);
-            return {name, props, sourceFilePath: filePath};
+            return buildComponentInfo(
+                name,
+                initializer.getParameters(),
+                filePath
+            );
         }
     }
 
-    // Not a supported component
     return null;
 }
 
