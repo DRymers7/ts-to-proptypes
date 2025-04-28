@@ -1,4 +1,4 @@
-import { Type } from "ts-morph";
+import {Type} from 'ts-morph';
 
 /**
  * // TODO: update docs
@@ -7,13 +7,32 @@ import { Type } from "ts-morph";
  * @returns string value of prop type, normalized for easier use
  */
 function normalizePropType(typeOrText: Type): string {
-    if (typeOrText.isArray() || typeOrText.isTuple()) return 'array';
-    if (typeOrText.isBoolean()) return 'boolean';
-    if (typeOrText.isNumber()) return 'number';
-    if (typeOrText.isString()) return 'string';
-    if (typeOrText.isObject()) return 'object';
-    if (typeOrText.getCallSignatures().length > 0) return 'function';        
-    return 'any';    
+    const textValue = typeOrText.getText();
+
+    if (
+        typeOrText.isArray() ||
+        typeOrText.isTuple() ||
+        textValue.endsWith('[]')
+    ) {
+        return 'array';
+    }
+    if (typeOrText.getCallSignatures().length > 0) {
+        return 'function';
+    }
+    if (typeOrText.isBoolean()) {
+        return 'boolean';
+    }
+    if (typeOrText.isNumber()) {
+        return 'number';
+    }
+    if (typeOrText.isString()) {
+        return 'string';
+    }
+    if (typeOrText.isObject()) {
+        return 'object';
+    }
+
+    return 'any';
 }
 
 export default normalizePropType;

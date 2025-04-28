@@ -1,6 +1,6 @@
-import { ComponentInfo } from "./interfaces/ComponentInfo";
-import { Node } from "ts-morph";
-import extractPropsFromParameter from "./extractPropsFromParameter";
+import {ComponentInfo} from './interfaces/ComponentInfo';
+import {Node} from 'ts-morph';
+import extractPropsFromParameter from './extractPropsFromParameter';
 
 /**
  * Parses the given component declaration, differentiating between Functions/ArrowFunctions
@@ -33,7 +33,7 @@ function parseComponentDeclaration(
     } else if (Node.isClassDeclaration(declaration)) {
         // TODO: implement class declaration extraction for props
         return null;
-    } 
+    }
     return null;
 }
 

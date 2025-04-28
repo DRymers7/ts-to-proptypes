@@ -1,4 +1,4 @@
-import { ParsedProp } from './interfaces/ParsedProp';
+import {ParsedProp} from './interfaces/ParsedProp';
 import normalizePropType from './normalizePropType';
 import ts from 'typescript';
 

@@ -12,9 +12,7 @@ const project = new Project({
 /**
  * Adding all source components to the project.
  */
-project.addSourceFilesAtPaths([
-    'src/**/*.tsx', 
-]);
+project.addSourceFilesAtPaths(['src/**/*.tsx']);
 
 /**
  * Getting the source files.
