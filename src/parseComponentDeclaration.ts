@@ -30,6 +30,8 @@ function parseComponentDeclaration(
             props,
             sourceFilePath: filePath,
         };
+    } else if (Node.isVariableDeclaration(declaration)) { 
+        
     } else if (Node.isClassDeclaration(declaration)) {
         // TODO: implement class declaration extraction for props
         return null;

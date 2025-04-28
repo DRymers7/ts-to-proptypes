@@ -30,6 +30,13 @@ const createMockDefaultFunctionComponent = (code: string) => {
     return {func, sourceFile};
 };
 
+const createMockNonComponent = (code: string) => {
+    const project = new Project();
+    const sourceFile = project.createSourceFile('TestNonComponent.tsx', code);
+    const variable = sourceFile.getVariableDeclarationOrThrow('NotAComponent');
+    return {variable, sourceFile};
+};
+
 describe('parseComponentDeclaration', () => {
     it('should extract props from a function component', () => {
         const {func, sourceFile} = createMockFunctionComponent(`
@@ -90,5 +97,16 @@ describe('parseComponentDeclaration', () => {
             sourceFilePath: expect.any(String),
             props: [{name: 'title', type: 'string', required: true}],
         });
+    });
+    it('should return null for non component input', () => {
+        const {variable, sourceFile} = createMockNonComponent(`
+            export const NotAComponent = 42;
+            `);
+        const result = parseComponentDeclaration(
+            'NotAComponent',
+            variable,
+            sourceFile.getFilePath()
+        );
+        expect(result).toBeNull();
     });
 });
