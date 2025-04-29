@@ -40,7 +40,7 @@ const createMockNonComponent = (code: string) => {
 /**
  * Test suite for parseComponentDeclaration module. If working as intended,
  * this module should expose one method that will correctly parse a given component's
- * declaration. 
+ * declaration.
  */
 describe('parseComponentDeclaration', () => {
     it('should extract props from a function component', () => {

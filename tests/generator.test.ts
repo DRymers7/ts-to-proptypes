@@ -4,8 +4,8 @@ import {ParsedProp} from '../src/interfaces/ParsedProp';
 import generateComponentString from '../src/generator';
 
 /**
- * Test suite to test the generator module. If performing as intended, 
- * the module should expose one method to generate an output string that can 
+ * Test suite to test the generator module. If performing as intended,
+ * the module should expose one method to generate an output string that can
  * be used by the ts-morph file writer.
  */
 describe('generateComponentString tests', () => {

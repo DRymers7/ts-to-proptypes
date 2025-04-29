@@ -11,3 +11,12 @@ export const typeMap: Record<string, string> = {
     function: 'PropTypes.func',
     any: 'PropTypes.any',
 };
+
+/**
+ * Write options associated with CLI arguments.
+ */
+export interface WriteOptions {
+    outDir?: string;
+    inline?: boolean;
+    prettier?: boolean;
+}
