@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {Project} from 'ts-morph';
 import {createSourceFile} from '../src/writer';
 import {ComponentInfo} from '../src/interfaces/ComponentInfo';
+import {WriteOptions} from '../src/types';
 
 /**
  * Test suite for file writing logic. If working as intended, this module
@@ -19,24 +20,53 @@ describe('createSourceFile', () => {
             ],
         };
 
+        const writeOptions: WriteOptions = {
+            outDir: '/test',
+            inline: false,
+            prettier: false,
+        };
+
         const project = new Project({
             useInMemoryFileSystem: true,
         });
 
-        await createSourceFile(mockComponent, project);
+        await createSourceFile(mockComponent, project, writeOptions);
 
         const generated = project.getSourceFileOrThrow(
-            'src/components/TestComponent.propTypes.ts'
+            '/test/TestComponent.propTypes.ts'
         );
         const text = generated.getFullText();
 
-        const hasImport = !!generated.getImportDeclaration('prop-types');
-        expect(hasImport).toBe(true);
-
+        expect(generated.getImportDeclaration('prop-types')).toBeDefined();
         expect(text).toContain('TestComponent.propTypes = {');
         expect(text).toContain('title: PropTypes.string.isRequired');
         expect(text).toContain('count: PropTypes.number');
-
         expect(text.trim().endsWith('};')).toBe(true);
+    });
+    it('should append PropTypes to the original file when inline is true', async () => {
+        const project = new Project({useInMemoryFileSystem: true});
+
+        const file = project.createSourceFile(
+            'src/components/TestComponent.tsx',
+            '',
+            {overwrite: true}
+        );
+
+        const mockComponent: ComponentInfo = {
+            name: 'TestComponent',
+            sourceFilePath: 'src/components/TestComponent.tsx',
+            props: [{name: 'foo', type: 'boolean', required: true}],
+        };
+
+        await createSourceFile(mockComponent, project, {
+            inline: true,
+            prettier: false,
+        });
+
+        const updated = project.getSourceFileOrThrow(
+            'src/components/TestComponent.tsx'
+        );
+        const text = updated.getFullText();
+        expect(text).toContain('TestComponent.propTypes =');
     });
 });

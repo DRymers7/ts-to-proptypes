@@ -46,7 +46,7 @@ async function createSourceFile(
         writer.write(generateComponentString(componentInfo));
     });
 
-    file.save();
+    await file.save();
 
     if (options.prettier) {
         await formatFile(outputPath);
