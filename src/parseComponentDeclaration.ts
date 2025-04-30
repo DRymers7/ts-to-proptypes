@@ -1,6 +1,7 @@
 import {ComponentInfo} from './interfaces/ComponentInfo';
 import {Node} from 'ts-morph';
 import extractPropsFromParameter from './extractPropsFromParameter';
+import path from 'path';
 
 /**
  * Creates the ComponentInfo object from the extracted props.
@@ -39,6 +40,32 @@ function parseComponentDeclaration(
     declaration: Node,
     filePath: string
 ): ComponentInfo | null {
+    if (name === 'default') {
+        if (Node.isFunctionDeclaration(declaration) && declaration.getName()) {
+            name = declaration.getName()!;
+        }
+        // For class declarations
+        else if (
+            Node.isClassDeclaration(declaration) &&
+            declaration.getName()
+        ) {
+            name = declaration.getName()!;
+        }
+        // For variable declarations (const Component = ...)
+        else if (Node.isVariableDeclaration(declaration)) {
+            const declarationName = declaration.getName();
+            if (declarationName) {
+                name = declarationName;
+            }
+        }
+
+        // If we still couldn't determine a better name, use the file name
+        if (name === 'default') {
+            const fileName = path.basename(filePath, path.extname(filePath));
+            name = fileName.charAt(0).toUpperCase() + fileName.slice(1);
+        }
+    }
+
     if (Node.isFunctionDeclaration(declaration)) {
         return buildComponentInfo(name, declaration.getParameters(), filePath);
     }

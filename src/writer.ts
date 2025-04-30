@@ -16,6 +16,37 @@ async function createSourceFile(
     currentProject: Project,
     options: WriteOptions
 ) {
+    if (
+        !componentInfo ||
+        !componentInfo.props ||
+        componentInfo.props.length === 0
+    ) {
+        console.warn(
+            `Skipping PropTypes generation for ${componentInfo?.name || 'unknown component'}: No valid props found`
+        );
+        return;
+    }
+
+    // Check for suspicious prop names that might indicate we're extracting from a native type
+    const suspiciousProps = [
+        'toString',
+        'valueOf',
+        'constructor',
+        'prototype',
+        'charAt',
+        'slice',
+    ];
+    const hasSuspiciousProps = componentInfo.props.some((prop) =>
+        suspiciousProps.includes(prop.name)
+    );
+
+    if (hasSuspiciousProps) {
+        console.error(
+            `Skipping PropTypes generation for ${componentInfo.name}: Detected native object methods in props`
+        );
+        return;
+    }
+
     const sourceFilePath = componentInfo.sourceFilePath;
     let outputPath = sourceFilePath.replace(/\.tsx?$/, '.propTypes.ts');
 

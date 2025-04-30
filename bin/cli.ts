@@ -24,36 +24,68 @@ const options = program.opts();
  * detection of props, correct parsing, and then file generation in the project.
  */
 async function main() {
-    const project = new Project({
-        tsConfigFilePath: 'tsconfig.json',
-    });
-    const sourceGlob = options.source;
-    project.addSourceFilesAtPaths([sourceGlob]);
+    try {
+        const project = new Project({
+            tsConfigFilePath: 'tsconfig.json',
+        });
+        const sourceGlob = options.source;
+        project.addSourceFilesAtPaths([sourceGlob]);
 
-    // Add all source .tsx files
-    project.addSourceFilesAtPaths(['src/**/*.tsx']);
+        // Add all source .tsx files
+        project.addSourceFilesAtPaths(['src/**/*.tsx']);
 
-    const sourceFiles = project.getSourceFiles();
+        const sourceFiles = project.getSourceFiles();
+        console.log(`Processing ${sourceFiles.length} source files...`);
 
-    for (const sourceFile of sourceFiles) {
-        try {
-            const components: ComponentInfo[] =
-                await parseComponents(sourceFile);
+        let processedComponentCount = 0;
 
-            for (const component of components) {
-                await createSourceFile(component, project, {
-                    outDir: options.outDir,
-                    inline: options.inline,
-                    prettier: options.prettier,
-                });
+        for (const sourceFile of sourceFiles) {
+            try {
+                const components: ComponentInfo[] =
+                    await parseComponents(sourceFile);
+
+                if (components.length === 0) {
+                    console.log(
+                        `No components found in: ${sourceFile.getFilePath()}`
+                    );
+                    continue;
+                }
+
+                console.log(
+                    `Found ${components.length} components in: ${sourceFile.getFilePath()}`
+                );
+
+                for (const component of components) {
+                    if (!component.props || component.props.length === 0) {
+                        console.log(
+                            `Skipping ${component.name}: No props found`
+                        );
+                        continue;
+                    }
+
+                    await createSourceFile(component, project, {
+                        outDir: options.outDir,
+                        inline: options.inline,
+                        prettier: options.prettier,
+                    });
+                    processedComponentCount++;
+                }
+            } catch (err) {
+                console.error(
+                    `Error parsing file: ${sourceFile.getFilePath()}`
+                );
+                console.error(err);
             }
-        } catch (err) {
-            console.error(`Error parsing file: ${sourceFile.getFilePath()}`);
-            console.error(err);
         }
-    }
+        console.log(
+            `Successfully processed ${processedComponentCount} components`
+        );
 
-    await project.save();
+        await project.save();
+    } catch (error) {
+        console.error('Fatal error:', error);
+        process.exit(1);
+    }
 }
 
 main();

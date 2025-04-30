@@ -13,6 +13,20 @@ function extractPropsFromParameter(
 ): ParsedProp[] {
     const type = param.getType();
 
+    const typeText = type.getText();
+    if (
+        typeText === 'string' ||
+        typeText === 'String' ||
+        typeText === 'object' ||
+        typeText === 'Object' ||
+        typeText === 'any'
+    ) {
+        console.warn(
+            `Warning: Attempted to extract props from native type: ${typeText}`
+        );
+        return [];
+    }
+
     return type.getProperties().map((prop) => {
         const propName = prop.getName();
         const rawType = prop.getTypeAtLocation(param);

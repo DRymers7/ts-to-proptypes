@@ -12,6 +12,15 @@ function normalizePropType(typeOrText: Type): string {
     const textValue = typeOrText.getText();
 
     if (
+        textValue === 'String' ||
+        textValue === 'Object' ||
+        textValue === 'Function'
+    ) {
+        console.warn(`Warning: Detected JavaScript native type: ${textValue}`);
+        return 'any';
+    }
+
+    if (
         typeOrText.isArray() ||
         typeOrText.isTuple() ||
         textValue.endsWith('[]')

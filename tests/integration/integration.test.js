@@ -1,8 +1,8 @@
 // tests/integration/integration.test.js
 import fs from 'fs/promises';
 import path from 'path';
-import { execSync } from 'child_process';
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import {execSync} from 'child_process';
+import {describe, it, expect, beforeAll, afterAll} from 'vitest';
 
 // Directories for test files
 const TEST_DIR = path.join(process.cwd(), 'tests/integration');
@@ -28,7 +28,7 @@ export function BasicComponent({ name, age, isActive }: Props) {
             {isActive ? \`\${name} (\${age})\` : 'Inactive user'}
         </div>
     );
-}`
+}`,
     },
     {
         name: 'OptionalPropsComponent.tsx',
@@ -52,7 +52,7 @@ export function OptionalPropsComponent({
             {subtitle && <h2>{subtitle}</h2>}
         </div>
     );
-}`
+}`,
     },
     {
         name: 'ArrowFunctionComponent.tsx',
@@ -81,7 +81,7 @@ export const ArrowFunctionComponent = ({
             {label}
         </button>
     );
-};`
+};`,
     },
     {
         name: 'ComplexPropsComponent.tsx',
@@ -123,7 +123,7 @@ export function ComplexPropsComponent({
             </button>
         </div>
     );
-}`
+}`,
     },
     {
         name: 'MixedPropsComponent.tsx',
@@ -188,19 +188,19 @@ export function MixedPropsComponent({
             {!isValid && <p className="error">Invalid selection</p>}
         </div>
     );
-}`
-    }
+}`,
+    },
 ];
 
 // PropType mapping for verification
 const TYPE_MAPPING = {
-    'string': 'string',
-    'number': 'number',
-    'boolean': 'bool',
-    'array': 'array',
-    'function': 'func',
-    'object': 'object',
-    'any': 'any'
+    string: 'string',
+    number: 'number',
+    boolean: 'bool',
+    array: 'array',
+    function: 'func',
+    object: 'object',
+    any: 'any',
 };
 
 // Helper to read file content
@@ -216,7 +216,7 @@ async function readFile(filePath) {
 // Helper to write file content
 async function writeFile(filePath, content) {
     try {
-        await fs.mkdir(path.dirname(filePath), { recursive: true });
+        await fs.mkdir(path.dirname(filePath), {recursive: true});
         await fs.writeFile(filePath, content);
         return true;
     } catch (error) {
@@ -229,54 +229,63 @@ async function writeFile(filePath, content) {
 async function extractExpectedProps(filePath) {
     const content = await readFile(filePath);
     if (!content) return [];
-    
+
     const props = [];
-    
+
     // Extract type declaration
     const typeMatch = content.match(/type\s+Props\s*=\s*\{([^}]+)\}/s);
     if (!typeMatch) return [];
-    
+
     const propsBlock = typeMatch[1];
-    
+
     // Match each prop declaration, handling comments
-    const propLines = propsBlock.split('\n')
-        .filter(line => !line.trim().startsWith('//') && line.trim().length > 0)
+    const propLines = propsBlock
+        .split('\n')
+        .filter(
+            (line) => !line.trim().startsWith('//') && line.trim().length > 0
+        )
         .join('\n');
-    
+
     // Improved regex to handle more complex type declarations
     const propRegex = /(\w+)(\??):\s*([^;]+);/g;
     let match;
-    
+
     while ((match = propRegex.exec(propLines)) !== null) {
         const name = match[1];
         const isOptional = match[2] === '?';
         let type = match[3].trim();
-        
+
         // Handle array types (including Array<T> and T[])
         if (type.endsWith('[]') || type.startsWith('Array<')) {
             type = 'array';
-        } 
+        }
         // Handle function types (including arrow functions and method signatures)
-        else if (type.includes('=>') || type.includes('function') || /\([^)]*\)/.test(type)) {
+        else if (
+            type.includes('=>') ||
+            type.includes('function') ||
+            /\([^)]*\)/.test(type)
+        ) {
             type = 'function';
         }
         // Handle object types (including interfaces, Record types, and inline object types)
-        else if (type.startsWith('{') || type.startsWith('Record<') || type.includes('CSSProperties')) {
-            type = 'object'; 
+        else if (
+            type.startsWith('{') ||
+            type.startsWith('Record<') ||
+            type.includes('CSSProperties')
+        ) {
+            type = 'object';
         }
         // Handle primitive types - improved boolean detection
         else if (type === 'boolean' || type === 'Boolean') {
             type = 'boolean';
-        }
-        else if (type === 'string' || type === 'String') {
+        } else if (type === 'string' || type === 'String') {
             type = 'string';
-        }
-        else if (type === 'number' || type === 'Number') {
+        } else if (type === 'number' || type === 'Number') {
             type = 'number';
         }
         // For union types, extract the base type if it's a primitive
         else if (type.includes('|')) {
-            const unionTypes = type.split('|').map(t => t.trim());
+            const unionTypes = type.split('|').map((t) => t.trim());
             // Check if any of the union types is a primitive
             for (const unionType of unionTypes) {
                 if (['string', 'number', 'boolean'].includes(unionType)) {
@@ -293,105 +302,129 @@ async function extractExpectedProps(filePath) {
         else {
             type = 'any';
         }
-        
+
         props.push({
             name,
             type,
-            required: !isOptional
+            required: !isOptional,
         });
     }
-    
+
     return props;
 }
 
 // Helper to verify PropTypes content against expected output
-async function verifyPropTypesOutput(componentName, expectedProps, outputFilePath) {
+async function verifyPropTypesOutput(
+    componentName,
+    expectedProps,
+    outputFilePath
+) {
     const content = await readFile(outputFilePath);
-    
+
     expect(content).not.toBeNull();
-    
+
     // Verify imports
     expect(content).toContain('import PropTypes from');
-    
+
     // Verify PropTypes block exists
     expect(content).toContain(`${componentName}.propTypes = {`);
-    
+
     // Log expected vs actual for debugging
     console.log(`\nComponent: ${componentName}`);
     console.log('Expected props:');
     console.table(expectedProps);
-    
+
     // Extract actual props from the generated file
-    const propTypesBlockMatch = content.match(new RegExp(`${componentName}\\.propTypes = \\{([\\s\\S]*?)\\};`));
+    const propTypesBlockMatch = content.match(
+        new RegExp(`${componentName}\\.propTypes = \\{([\\s\\S]*?)\\};`)
+    );
     expect(propTypesBlockMatch).not.toBeNull();
-    
+
     const propTypesBlock = propTypesBlockMatch[1];
-    const actualProps = propTypesBlock.trim().split('\n').map(line => {
-        const match = line.trim().match(/(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/);
-        if (!match) return null;
-        return {
-            name: match[1],
-            type: match[2],
-            required: !!match[3]
-        };
-    }).filter(p => p !== null);
-    
+    const actualProps = propTypesBlock
+        .trim()
+        .split('\n')
+        .map((line) => {
+            const match = line
+                .trim()
+                .match(/(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/);
+            if (!match) return null;
+            return {
+                name: match[1],
+                type: match[2],
+                required: !!match[3],
+            };
+        })
+        .filter((p) => p !== null);
+
     console.log('Actual props:');
     console.table(actualProps);
-    
+
     // Relaxed verification that checks if all expected props exist
     // but doesn't fail if the type is different - just logs warnings
     let failures = [];
-    
-    for (const { name, type, required } of expectedProps) {
+
+    for (const {name, type, required} of expectedProps) {
         const expectedType = TYPE_MAPPING[type] || 'any';
-        const actualProp = actualProps.find(p => p.name === name);
-        
+        const actualProp = actualProps.find((p) => p.name === name);
+
         if (!actualProp) {
             console.error(`\nMissing prop: ${name}`);
             failures.push(`Missing prop: ${name}`);
             continue;
         }
-        
+
         // Check if type matches
         if (actualProp.type !== expectedType) {
             console.warn(`\nProp type mismatch for ${name}:`);
-            console.warn(`  Expected: ${expectedType}${required ? ' (required)' : ' (optional)'}`);
-            console.warn(`  Actual  : ${actualProp.type}${actualProp.required ? ' (required)' : ' (optional)'}`);
+            console.warn(
+                `  Expected: ${expectedType}${required ? ' (required)' : ' (optional)'}`
+            );
+            console.warn(
+                `  Actual  : ${actualProp.type}${actualProp.required ? ' (required)' : ' (optional)'}`
+            );
             // Don't fail on type mismatch, just warn
         }
-        
+
         // Check if required flag matches
         if (actualProp.required !== required) {
             console.warn(`\nProp required flag mismatch for ${name}:`);
             console.warn(`  Expected: ${required ? 'required' : 'optional'}`);
-            console.warn(`  Actual  : ${actualProp.required ? 'required' : 'optional'}`);
+            console.warn(
+                `  Actual  : ${actualProp.required ? 'required' : 'optional'}`
+            );
             // Don't fail on required flag mismatch, just warn
         }
     }
-    
+
     // Check if we have extra props not in the expected list
     if (actualProps.length !== expectedProps.length) {
-        const actualNames = actualProps.map(p => p.name);
-        const expectedNames = expectedProps.map(p => p.name);
-        
-        const extras = actualNames.filter(name => !expectedNames.includes(name));
+        const actualNames = actualProps.map((p) => p.name);
+        const expectedNames = expectedProps.map((p) => p.name);
+
+        const extras = actualNames.filter(
+            (name) => !expectedNames.includes(name)
+        );
         if (extras.length > 0) {
             console.warn(`\nExtra props found: ${extras.join(', ')}`);
         }
-        
-        const missing = expectedNames.filter(name => !actualNames.includes(name));
+
+        const missing = expectedNames.filter(
+            (name) => !actualNames.includes(name)
+        );
         if (missing.length > 0) {
             console.error(`\nMissing props: ${missing.join(', ')}`);
             failures.push(`Missing props: ${missing.join(', ')}`);
         }
     }
-    
+
     // Only fail if props are missing, not for type mismatches
     if (failures.length > 0) {
-        throw new Error(`PropTypes verification failed:\n${failures.join('\n')}`);
+        throw new Error(
+            `PropTypes verification failed:\n${failures.join('\n')}`
+        );
     }
-    
+
     return true;
 }
 
@@ -404,9 +437,9 @@ function getComponentName(filePath) {
 // Helper to execute the CLI
 function runCLI(args = '') {
     try {
-        return execSync(`npm run dev -- ${args}`, { 
+        return execSync(`npm run dev -- ${args}`, {
             encoding: 'utf-8',
-            stdio: 'pipe'
+            stdio: 'pipe',
         });
     } catch (error) {
         console.error(`CLI execution error: ${error.message}`);
@@ -425,121 +458,147 @@ async function createTestFixtures() {
 describe('CLI Integration Tests', () => {
     beforeAll(async () => {
         // Create test directories
-        await fs.mkdir(INPUT_DIR, { recursive: true });
-        await fs.mkdir(OUTPUT_DIR, { recursive: true });
-        
+        await fs.mkdir(INPUT_DIR, {recursive: true});
+        await fs.mkdir(OUTPUT_DIR, {recursive: true});
+
         // Create test fixtures
         await createTestFixtures();
-        
+
         console.log(`Created test fixtures in ${INPUT_DIR}`);
     });
-    
+
     afterAll(async () => {
         // Clean up generated files
         try {
-            await fs.rm(INPUT_DIR, { recursive: true, force: true });
-            await fs.rm(OUTPUT_DIR, { recursive: true, force: true });
+            await fs.rm(INPUT_DIR, {recursive: true, force: true});
+            await fs.rm(OUTPUT_DIR, {recursive: true, force: true});
         } catch (error) {
             console.error('Error cleaning up:', error);
         }
     });
-    
+
     it('should process all input files and generate correct PropTypes', async () => {
         try {
             // Get all .tsx files from input directory
             const inputFiles = (await fs.readdir(INPUT_DIR))
-                .filter(file => file.endsWith('.tsx'))
-                .map(file => path.join(INPUT_DIR, file));
-            
+                .filter((file) => file.endsWith('.tsx'))
+                .map((file) => path.join(INPUT_DIR, file));
+
             expect(inputFiles.length).toBeGreaterThan(0);
-            console.log(`Found ${inputFiles.length} test files:`, inputFiles.map(f => path.basename(f)));
-            
+            console.log(
+                `Found ${inputFiles.length} test files:`,
+                inputFiles.map((f) => path.basename(f))
+            );
+
             // Run CLI on all input files
             const outputPath = path.relative(process.cwd(), OUTPUT_DIR);
-            const inputGlob = path.relative(process.cwd(), path.join(INPUT_DIR, '*.tsx'));
+            const inputGlob = path.relative(
+                process.cwd(),
+                path.join(INPUT_DIR, '*.tsx')
+            );
             console.log(`Running CLI: -s "${inputGlob}" -o "${outputPath}"`);
-            
+
             const result = runCLI(`-s "${inputGlob}" -o "${outputPath}"`);
             if (result === null) {
-                console.warn("⚠️ CLI execution failed, but continuing with verification of any generated files");
+                console.warn(
+                    '⚠️ CLI execution failed, but continuing with verification of any generated files'
+                );
             }
-            
+
             // Verify each generated file
             let verifiedCount = 0;
             for (const inputFile of inputFiles) {
                 const componentName = getComponentName(inputFile);
-                const outputFile = path.join(OUTPUT_DIR, `${componentName}.propTypes.ts`);
-                
+                const outputFile = path.join(
+                    OUTPUT_DIR,
+                    `${componentName}.propTypes.ts`
+                );
+
                 // Check if output file exists
                 try {
                     await fs.access(outputFile);
                 } catch (error) {
-                    console.warn(`⚠️ Output file not found for ${componentName}, skipping verification`);
+                    console.warn(
+                        `⚠️ Output file not found for ${componentName}, skipping verification`
+                    );
                     continue;
                 }
-                
+
                 // Extract expected props
                 const expectedProps = await extractExpectedProps(inputFile);
-                
+
                 // Verify output file contents
                 try {
-                    await verifyPropTypesOutput(componentName, expectedProps, outputFile);
+                    await verifyPropTypesOutput(
+                        componentName,
+                        expectedProps,
+                        outputFile
+                    );
                     console.log(`✓ Verified PropTypes for ${componentName}`);
                     verifiedCount++;
                 } catch (err) {
-                    console.error(`✗ Verification failed for ${componentName}: ${err.message}`);
+                    console.error(
+                        `✗ Verification failed for ${componentName}: ${err.message}`
+                    );
                 }
             }
-            
+
             // At least some files should be verified
             expect(verifiedCount).toBeGreaterThan(0);
-            console.log(`Successfully verified ${verifiedCount}/${inputFiles.length} components`);
+            console.log(
+                `Successfully verified ${verifiedCount}/${inputFiles.length} components`
+            );
         } catch (error) {
             console.error('Test error:', error);
             throw error;
         }
     });
-    
+
     it('should generate inline propTypes when --inline flag is used', async () => {
         // Get first input file for inline test
-        const inputFiles = (await fs.readdir(INPUT_DIR))
-            .filter(file => file.endsWith('.tsx'));
-        
+        const inputFiles = (await fs.readdir(INPUT_DIR)).filter((file) =>
+            file.endsWith('.tsx')
+        );
+
         expect(inputFiles.length).toBeGreaterThan(0);
-        
+
         const testFile = inputFiles[0];
         const srcPath = path.join(INPUT_DIR, testFile);
         const destPath = path.join(OUTPUT_DIR, testFile);
-        
+
         // Copy file to output dir to avoid modifying original
         await fs.copyFile(srcPath, destPath);
-        
+
         // Run CLI with inline flag
         console.log(`Testing inline mode with file: ${testFile}`);
         const result = runCLI(`-s "${destPath}" --inline`);
-        
+
         if (result === null) {
-            console.warn("⚠️ CLI execution failed, skipping inline test verification");
+            console.warn(
+                '⚠️ CLI execution failed, skipping inline test verification'
+            );
             return;
         }
-        
+
         // Verify inline insertion
         const content = await readFile(destPath);
         const componentName = getComponentName(destPath);
-        
+
         expect(content).toContain(`${componentName}.propTypes = {`);
         expect(content).toContain('PropTypes.');
         console.log(`✓ Verified inline PropTypes for ${componentName}`);
     });
-    
+
     it('should skip prettier test if CLI errors occur', async () => {
         // This test acknowledges that there might be issues with the prettier integration
         // but doesn't fail the entire test suite if it encounters the specific error
-        console.log("Note: The prettier formatting test is being skipped due to known parser.ts issues");
-        
+        console.log(
+            'Note: The prettier formatting test is being skipped due to known parser.ts issues'
+        );
+
         // No actual assertions - this is a skipped test
         // If you fix the parser.ts error, you can uncomment the real prettier test below
-        
+
         /*
         // Get first input file for prettier test
         const inputFiles = (await fs.readdir(INPUT_DIR))

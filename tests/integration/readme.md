@@ -23,24 +23,27 @@ The integration tests work by:
 The integration tests verify:
 
 1. **Basic PropTypes Generation**: Processes all components in the `input_files` directory and validates that:
-   - PropTypes imports are correctly added
-   - PropTypes definitions match the TypeScript type definitions
-   - Required/optional flags are correctly applied
+
+    - PropTypes imports are correctly added
+    - PropTypes definitions match the TypeScript type definitions
+    - Required/optional flags are correctly applied
 
 2. **Inline PropTypes**: Tests the `--inline` flag by:
-   - Copying a component to the test output directory
-   - Running the CLI with the `--inline` flag
-   - Verifying that PropTypes are inserted into the original file
+
+    - Copying a component to the test output directory
+    - Running the CLI with the `--inline` flag
+    - Verifying that PropTypes are inserted into the original file
 
 3. **Prettier Formatting**: Tests the `--prettier` flag by:
-   - Processing a component with the `--prettier` flag
-   - Verifying that the output is formatted according to project settings
+    - Processing a component with the `--prettier` flag
+    - Verifying that the output is formatted according to project settings
 
 ## Adding Test Files
 
 To add new test cases, simply add TypeScript component files to the `input_files` directory. The test will automatically detect and process all `.tsx` files in this directory.
 
 Good test files would include:
+
 - Basic components with required props
 - Components with optional props
 - Components with complex prop types (arrays, objects, functions)
