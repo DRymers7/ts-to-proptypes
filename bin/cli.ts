@@ -4,6 +4,7 @@ import {parseComponents} from '../src/parser';
 import {createSourceFile} from '../src/writer';
 import {ComponentInfo} from '../src/interfaces/ComponentInfo';
 import {Command} from 'commander';
+import path from 'path';
 
 /**
  * Setup of CLI options and arguments handling
@@ -31,10 +32,22 @@ async function main() {
         const sourceGlob = options.source;
         project.addSourceFilesAtPaths([sourceGlob]);
 
-        // Add all source .tsx files
-        project.addSourceFilesAtPaths(['src/**/*.tsx']);
+        // Get the absolute path to the package root for comparison
+        const packageDir = path.resolve(__dirname, '..');
 
-        const sourceFiles = project.getSourceFiles();
+        // Filter out files that are part of the ts-to-proptypes package itself
+        const sourceFiles = project.getSourceFiles().filter((file) => {
+            const filePath = file.getFilePath();
+            // Skip our own package files
+            if (
+                filePath.startsWith(packageDir + '/src/') &&
+                !filePath.includes(sourceGlob.replace(/\*/g, ''))
+            ) {
+                console.log(`Skipping internal file: ${filePath}`);
+                return false;
+            }
+            return true;
+        });
         console.log(`Processing ${sourceFiles.length} source files...`);
 
         let processedComponentCount = 0;

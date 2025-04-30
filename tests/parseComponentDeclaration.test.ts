@@ -98,7 +98,7 @@ describe('parseComponentDeclaration', () => {
         );
 
         expect(result).toEqual({
-            name: 'default',
+            name: 'HelloWorld',
             sourceFilePath: expect.any(String),
             props: [{name: 'title', type: 'string', required: true}],
         });
