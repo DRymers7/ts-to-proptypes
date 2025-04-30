@@ -15,6 +15,11 @@ const createTypeFromText = (typeText: string) => {
     return variableDeclaration.getType();
 };
 
+/**
+ * Test suite to test the normalilzePropType module. If working as intended,
+ * this module should expose one method that evaulates the type of a given prop,
+ * and returns a standardized string which we can use for subsequent processing.
+ */
 describe('normalizePropType', () => {
     it('should normalize string types', () => {
         const stringType = createTypeFromText('string');
