@@ -5,6 +5,7 @@ import {createSourceFile} from '../src/writer';
 import {ComponentInfo} from '../src/interfaces/ComponentInfo';
 import {Command} from 'commander';
 import path from 'path';
+import {SourceFile} from 'ts-morph';
 
 /**
  * Setup of CLI options and arguments handling
@@ -21,6 +22,82 @@ program.parse();
 const options = program.opts();
 
 /**
+ * Simple safety function to ensure that we aren't generating proptypes on the files
+ * of ts-to-proptypes itself.
+ *
+ * @param sourceFiles source files array from the ts-morph project object
+ * @param packageDir absolute path of the package root
+ * @param sourceGlob designated source glob passed in by the user via CLI args
+ * @returns array of sourcefiles to process
+ */
+function determineSourceFiles(
+    sourceFiles: SourceFile[],
+    packageDir: string,
+    sourceGlob: any
+): SourceFile[] {
+    return sourceFiles.filter((file) => {
+        const filePath = file.getFilePath();
+        if (
+            filePath.startsWith(packageDir + '/src/') &&
+            !filePath.includes(sourceGlob.replace(/\*/g, ''))
+        ) {
+            console.log(`Skipping internal file: ${filePath}`);
+            return false;
+        }
+        return true;
+    });
+}
+
+/**
+ * Function responsible for the parse component workflow, and validating that some level
+ * of components are being processed. Will execute asynchronously and resole to an array of ComponentInfo objects.
+ *
+ * @param sourceFile sourcefile currently being processed.
+ * @returns array of ComponentInfo, with prop information on the source file.
+ */
+async function handleComponentParsing(
+    sourceFile: SourceFile
+): Promise<ComponentInfo[]> {
+    try {
+        const components: ComponentInfo[] = await parseComponents(sourceFile);
+
+        if (components.length === 0) {
+            console.warn(`No components found in: ${sourceFile.getFilePath()}`);
+        }
+        console.log(
+            `Found ${components.length} components in: ${sourceFile.getFilePath()}`
+        );
+        return components;
+    } catch (error) {
+        console.error(`Error parsing components: ${error}`);
+        throw error;
+    }
+}
+
+/**
+ * Function responsible for calling prop file generation flow.
+ *
+ * @param component individual component extracted from parsed componentInfo
+ * @param project current project being worked on in context.
+ * @returns void - this method will generate new proptype files in the specified out directory.
+ */
+async function handlePropFileCreation(
+    component: ComponentInfo,
+    project: Project
+): Promise<void> {
+    if (!component.props || component.props.length === 0) {
+        console.log(`Skipping ${component.name}: No props found`);
+        return;
+    }
+
+    await createSourceFile(component, project, {
+        outDir: options.outDir,
+        inline: options.inline,
+        prettier: options.prettier,
+    });
+}
+
+/**
  * Entrypoint to the ts-to-props package. This will facilitate the
  * detection of props, correct parsing, and then file generation in the project.
  */
@@ -31,69 +108,20 @@ async function main() {
         });
         const sourceGlob = options.source;
         project.addSourceFilesAtPaths([sourceGlob]);
-
-        // Get the absolute path to the package root for comparison
         const packageDir = path.resolve(__dirname, '..');
-
-        // Filter out files that are part of the ts-to-proptypes package itself
-        const sourceFiles = project.getSourceFiles().filter((file) => {
-            const filePath = file.getFilePath();
-            // Skip our own package files
-            if (
-                filePath.startsWith(packageDir + '/src/') &&
-                !filePath.includes(sourceGlob.replace(/\*/g, ''))
-            ) {
-                console.log(`Skipping internal file: ${filePath}`);
-                return false;
-            }
-            return true;
-        });
+        const sourceFiles = determineSourceFiles(
+            project.getSourceFiles(),
+            packageDir,
+            sourceGlob
+        );
         console.log(`Processing ${sourceFiles.length} source files...`);
-
-        let processedComponentCount = 0;
-
         for (const sourceFile of sourceFiles) {
-            try {
-                const components: ComponentInfo[] =
-                    await parseComponents(sourceFile);
-
-                if (components.length === 0) {
-                    console.log(
-                        `No components found in: ${sourceFile.getFilePath()}`
-                    );
-                    continue;
-                }
-
-                console.log(
-                    `Found ${components.length} components in: ${sourceFile.getFilePath()}`
-                );
-
-                for (const component of components) {
-                    if (!component.props || component.props.length === 0) {
-                        console.log(
-                            `Skipping ${component.name}: No props found`
-                        );
-                        continue;
-                    }
-
-                    await createSourceFile(component, project, {
-                        outDir: options.outDir,
-                        inline: options.inline,
-                        prettier: options.prettier,
-                    });
-                    processedComponentCount++;
-                }
-            } catch (err) {
-                console.error(
-                    `Error parsing file: ${sourceFile.getFilePath()}`
-                );
-                console.error(err);
+            const components: ComponentInfo[] =
+                await handleComponentParsing(sourceFile);
+            for (const component of components) {
+                await handlePropFileCreation(component, project);
             }
         }
-        console.log(
-            `Successfully processed ${processedComponentCount} components`
-        );
-
         await project.save();
     } catch (error) {
         console.error('Fatal error:', error);

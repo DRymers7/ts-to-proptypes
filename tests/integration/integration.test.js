@@ -5,7 +5,7 @@ import {describe, it, expect, beforeAll, afterAll} from 'vitest';
 
 // Directories for test files
 const TEST_DIR = path.join(process.cwd(), 'tests/integration');
-const INPUT_DIR = path.join(TEST_DIR, 'fixtures'); 
+const INPUT_DIR = path.join(TEST_DIR, 'fixtures');
 const OUTPUT_DIR = path.join(TEST_DIR, 'output');
 
 // Test component definitions
