@@ -2,12 +2,6 @@ import {ComponentInfo} from './interfaces/ComponentInfo';
 import {ExportedDeclarations, SourceFile} from 'ts-morph';
 import parseComponentDeclaration from './parseComponentDeclaration';
 
-// 1. load and parse the file
-// 2. walk AST looking for function and class components
-// 3. for each function, find the first parameter for func components or props type for class
-// 4. parse each prop to get the type (string, num, etc.) and whether it is required
-// return structured data (list of compoentInfo) objects
-
 /**
  * Loops through all ExportedDeclarations in the given source file, and extracts props
  * if that declaration is a:
@@ -33,7 +27,9 @@ async function parseComponents(
                     sourceFile.getFilePath()
                 )
             )
-            .filter((c): c is ComponentInfo => c !== null)
+            .filter(
+                (component): component is ComponentInfo => component !== null
+            )
     );
 }
 

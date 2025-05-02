@@ -1,4 +1,3 @@
-// tests/integration/integration.test.js
 import fs from 'fs/promises';
 import path from 'path';
 import {execSync} from 'child_process';
@@ -6,7 +5,7 @@ import {describe, it, expect, beforeAll, afterAll} from 'vitest';
 
 // Directories for test files
 const TEST_DIR = path.join(process.cwd(), 'tests/integration');
-const INPUT_DIR = path.join(TEST_DIR, 'fixtures'); // Change to use a fixtures directory inside tests
+const INPUT_DIR = path.join(TEST_DIR, 'fixtures');
 const OUTPUT_DIR = path.join(TEST_DIR, 'output');
 
 // Test component definitions
@@ -203,7 +202,6 @@ const TYPE_MAPPING = {
     any: 'any',
 };
 
-// Helper to read file content
 async function readFile(filePath) {
     try {
         return await fs.readFile(filePath, 'utf-8');
@@ -213,7 +211,6 @@ async function readFile(filePath) {
     }
 }
 
-// Helper to write file content
 async function writeFile(filePath, content) {
     try {
         await fs.mkdir(path.dirname(filePath), {recursive: true});
@@ -225,7 +222,6 @@ async function writeFile(filePath, content) {
     }
 }
 
-// Helper to extract expected props from a TSX file
 async function extractExpectedProps(filePath) {
     const content = await readFile(filePath);
     if (!content) return [];
@@ -313,7 +309,6 @@ async function extractExpectedProps(filePath) {
     return props;
 }
 
-// Helper to verify PropTypes content against expected output
 async function verifyPropTypesOutput(
     componentName,
     expectedProps,

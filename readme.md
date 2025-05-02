@@ -7,6 +7,7 @@ Generate React PropTypes declarations automatically from TypeScript interfaces a
 `ts-to-proptypes` is a developer tool that bridges the gap between TypeScript's static type system and React's runtime PropTypes validation. It analyzes your TypeScript React components and generates corresponding PropTypes definitions, enhancing your components with runtime type checking without the manual effort of maintaining duplicate type definitions.
 
 This tool is particularly useful for projects that:
+
 - Use TypeScript for static type checking
 - Need runtime validation through PropTypes
 - Want to maintain consistency between TypeScript types and PropTypes
@@ -66,27 +67,27 @@ Given a TypeScript component:
 import React from 'react';
 
 type ButtonProps = {
-  label: string;
-  onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
-  disabled?: boolean;
+    label: string;
+    onClick: () => void;
+    variant?: 'primary' | 'secondary' | 'danger';
+    disabled?: boolean;
 };
 
-export function Button({ 
-  label, 
-  onClick, 
-  variant = 'primary', 
-  disabled = false 
+export function Button({
+    label,
+    onClick,
+    variant = 'primary',
+    disabled = false,
 }: ButtonProps) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`btn btn-${variant}`}
-      disabled={disabled}
-    >
-      {label}
-    </button>
-  );
+    return (
+        <button
+            onClick={onClick}
+            className={`btn btn-${variant}`}
+            disabled={disabled}
+        >
+            {label}
+        </button>
+    );
 }
 ```
 
@@ -97,10 +98,10 @@ export function Button({
 import PropTypes from 'prop-types';
 
 Button.propTypes = {
-  label: PropTypes.string.isRequired,
-  onClick: PropTypes.func.isRequired,
-  variant: PropTypes.string,
-  disabled: PropTypes.bool
+    label: PropTypes.string.isRequired,
+    onClick: PropTypes.func.isRequired,
+    variant: PropTypes.string,
+    disabled: PropTypes.bool,
 };
 ```
 
@@ -114,45 +115,45 @@ import React from 'react';
 import PropTypes from 'prop-types';
 
 type ButtonProps = {
-  label: string;
-  onClick: () => void;
-  variant?: 'primary' | 'secondary' | 'danger';
-  disabled?: boolean;
+    label: string;
+    onClick: () => void;
+    variant?: 'primary' | 'secondary' | 'danger';
+    disabled?: boolean;
 };
 
-export function Button({ 
-  label, 
-  onClick, 
-  variant = 'primary', 
-  disabled = false 
+export function Button({
+    label,
+    onClick,
+    variant = 'primary',
+    disabled = false,
 }: ButtonProps) {
-  return (
-    <button 
-      onClick={onClick}
-      className={`btn btn-${variant}`}
-      disabled={disabled}
-    >
-      {label}
-    </button>
-  );
+    return (
+        <button
+            onClick={onClick}
+            className={`btn btn-${variant}`}
+            disabled={disabled}
+        >
+            {label}
+        </button>
+    );
 }
 
 Button.propTypes = {
-  label: PropTypes.string.isRequired,
-  onClick: PropTypes.func.isRequired,
-  variant: PropTypes.string,
-  disabled: PropTypes.bool
+    label: PropTypes.string.isRequired,
+    onClick: PropTypes.func.isRequired,
+    variant: PropTypes.string,
+    disabled: PropTypes.bool,
 };
 ```
 
 ## Command Line Options
 
-| Option | Alias | Description | Default |
-|--------|-------|-------------|---------|
-| `--source` | `-s` | Glob pattern for source files | `src/**/*.tsx` |
-| `--outDir` | `-o` | Directory to place generated files | Current directory |
-| `--inline` | - | Append PropTypes into the original file | `false` |
-| `--prettier` | - | Format generated files using Prettier | `false` |
+| Option       | Alias | Description                             | Default           |
+| ------------ | ----- | --------------------------------------- | ----------------- |
+| `--source`   | `-s`  | Glob pattern for source files           | `src/**/*.tsx`    |
+| `--outDir`   | `-o`  | Directory to place generated files      | Current directory |
+| `--inline`   | -     | Append PropTypes into the original file | `false`           |
+| `--prettier` | -     | Format generated files using Prettier   | `false`           |
 
 ## How It Works
 
@@ -170,15 +171,15 @@ The tool uses the powerful `ts-morph` library to analyze TypeScript code and mai
 
 TypeScript types are mapped to PropTypes as follows:
 
-| TypeScript Type | PropTypes Equivalent |
-|-----------------|----------------------|
-| `string` | `PropTypes.string` |
-| `number` | `PropTypes.number` |
-| `boolean` | `PropTypes.bool` |
-| `any` | `PropTypes.any` |
-| `Array<T>` or `T[]` | `PropTypes.array` |
-| `Function` or `() => void` | `PropTypes.func` |
-| `object` or `{}` | `PropTypes.object` |
+| TypeScript Type            | PropTypes Equivalent |
+| -------------------------- | -------------------- |
+| `string`                   | `PropTypes.string`   |
+| `number`                   | `PropTypes.number`   |
+| `boolean`                  | `PropTypes.bool`     |
+| `any`                      | `PropTypes.any`      |
+| `Array<T>` or `T[]`        | `PropTypes.array`    |
+| `Function` or `() => void` | `PropTypes.func`     |
+| `object` or `{}`           | `PropTypes.object`   |
 
 Optional props (marked with `?`) don't include the `.isRequired` validator.
 
@@ -204,6 +205,7 @@ Contributions are welcome! Here's how to get started:
 7. Submit a pull request
 
 Before submitting, please ensure your code:
+
 - Passes all tests
 - Follows the existing code style
 - Includes appropriate documentation
@@ -215,6 +217,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## Acknowledgements
 
 This tool builds on the excellent work of:
+
 - The TypeScript team and community
 - React PropTypes
 - ts-morph for TypeScript AST manipulation

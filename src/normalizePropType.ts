@@ -8,18 +8,15 @@ import {Type} from 'ts-morph';
  * @param typeString raw string value returned from prop call to .getTypeAtLocation(param).getText()
  * @returns string value of prop type, normalized for easier use
  */
-function normalizePropType(typeOrText: Type): string {
-    const textValue = typeOrText.getText();
-
-    if (
-        textValue === 'String' ||
-        textValue === 'Object' ||
-        textValue === 'Function'
-    ) {
-        console.warn(`Warning: Detected JavaScript native type: ${textValue}`);
+export function normalizePropType(typeOrText: Type): string {
+    // 1) Union types → always 'any'
+    if (typeOrText.isUnion()) {
         return 'any';
     }
 
+    const textValue = typeOrText.getText();
+
+    // arrays & tuples
     if (
         typeOrText.isArray() ||
         typeOrText.isTuple() ||
@@ -27,9 +24,13 @@ function normalizePropType(typeOrText: Type): string {
     ) {
         return 'array';
     }
+
+    // functions
     if (typeOrText.getCallSignatures().length > 0) {
         return 'function';
     }
+
+    // primitives
     if (typeOrText.isBoolean()) {
         return 'boolean';
     }
@@ -39,11 +40,13 @@ function normalizePropType(typeOrText: Type): string {
     if (typeOrText.isString()) {
         return 'string';
     }
+
+    // objects
     if (typeOrText.isObject()) {
         return 'object';
     }
 
+    // fallback
     return 'any';
 }
-
 export default normalizePropType;
