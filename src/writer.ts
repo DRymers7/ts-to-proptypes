@@ -16,55 +16,18 @@ async function createSourceFile(
     currentProject: Project,
     options: WriteOptions
 ) {
-    if (
-        !componentInfo ||
-        !componentInfo.props ||
-        componentInfo.props.length === 0
-    ) {
-        console.warn(
-            `Skipping PropTypes generation for ${componentInfo?.name || 'unknown component'}: No valid props found`
-        );
-        return;
-    }
+    if (!componentInfo.props.length) return;
 
-    // Check for suspicious prop names that might indicate we're extracting from a native type
-    const suspiciousProps = [
-        'toString',
-        'valueOf',
-        'constructor',
-        'prototype',
-        'charAt',
-        'slice',
-    ];
-    const hasSuspiciousProps = componentInfo.props.some((prop) =>
-        suspiciousProps.includes(prop.name)
-    );
-
-    if (hasSuspiciousProps) {
-        console.error(
-            `Skipping PropTypes generation for ${componentInfo.name}: Detected native object methods in props`
-        );
-        return;
-    }
-
-    const sourceFilePath = componentInfo.sourceFilePath;
-    let outputPath = sourceFilePath.replace(/\.tsx?$/, '.propTypes.ts');
-
+    const src = componentInfo.sourceFilePath;
+    let out = src.replace(/\.tsx?$/, '.propTypes.ts');
     if (options.outDir) {
-        // Rewrite path to output directory
-        const fileName = outputPath.split('/').pop();
-        outputPath = `${options.outDir}/${fileName}`;
+        const fn = out.split('/').pop();
+        out = `${options.outDir}/${fn}`;
     }
 
-    let file;
-
-    if (options.inline) {
-        file = currentProject.getSourceFileOrThrow(sourceFilePath);
-    } else {
-        file = currentProject.createSourceFile(outputPath, '', {
-            overwrite: true,
-        });
-    }
+    const file = options.inline
+        ? currentProject.getSourceFileOrThrow(src)
+        : currentProject.createSourceFile(out, '', {overwrite: true});
 
     if (!file.getImportDeclaration('prop-types')) {
         file.addImportDeclaration({
@@ -73,14 +36,11 @@ async function createSourceFile(
         });
     }
 
-    file.addStatements((writer) => {
-        writer.write(generateComponentString(componentInfo));
-    });
-
+    file.addStatements((w) => w.write(generateComponentString(componentInfo)));
     await file.save();
-
     if (options.prettier) {
-        await formatFile(outputPath);
+        const target = options.inline ? src : out;
+        await formatFile(target);
     }
 }
 

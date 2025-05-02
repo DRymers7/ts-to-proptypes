@@ -9,31 +9,9 @@ import {Type} from 'ts-morph';
  * @returns string value of prop type, normalized for easier use
  */
 export function normalizePropType(typeOrText: Type): string {
-    // 1) Union types must be handled before anything else
+    // 1) Union types → always 'any'
     if (typeOrText.isUnion()) {
-        const members = typeOrText.getUnionTypes();
-        // 2) Filter out undefined (makes optional props work)
-        const nonUndef = members.filter((t) => t.getText() !== 'undefined');
-        // 3) If there’s just one real type left, recurse
-        if (nonUndef.length === 1) {
-            return normalizePropType(nonUndef[0]);
-        }
-        // 4a) Union of string literals → string
-        const allStringLits = nonUndef.every((t) =>
-            /^['"].*['"]$/.test(t.getText())
-        );
-        if (allStringLits) return 'string';
-        // 4b) Union of numeric literals → number
-        const allNumberLits = nonUndef.every((t) =>
-            /^\d+(\.\d+)?$/.test(t.getText())
-        );
-        if (allNumberLits) return 'number';
-        // 4c) Union of boolean literals → boolean
-        const allBoolLits = nonUndef.every(
-            (t) => t.getText() === 'true' || t.getText() === 'false'
-        );
-        if (allBoolLits) return 'boolean';
-        // otherwise we don’t know—fall through to later
+        return 'any';
     }
 
     const textValue = typeOrText.getText();
@@ -63,13 +41,12 @@ export function normalizePropType(typeOrText: Type): string {
         return 'string';
     }
 
-    // everything else that looks like an object
+    // objects
     if (typeOrText.isObject()) {
         return 'object';
     }
 
-    // give up
+    // fallback
     return 'any';
 }
-
 export default normalizePropType;
