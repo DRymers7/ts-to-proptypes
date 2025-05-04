@@ -661,11 +661,4 @@ describe('CLI Integration Tests', () => {
         console.log(`✓ Verified inline PropTypes for ${componentName}`);
     });
 
-    it('should skip prettier test if CLI errors occur', async () => {
-        // This test acknowledges that there might be issues with the prettier integration
-        // but doesn't fail the entire test suite if it encounters the specific error
-        console.log(
-            'Note: The prettier formatting test is being skipped due to known parser.ts issues'
-        );
-    });
 });

@@ -3,44 +3,125 @@ import generateComponentString from './generator';
 import {ComponentInfo} from './interfaces/ComponentInfo';
 import {WriteOptions} from './types';
 import {formatSingleFile} from './formatter';
+import path from 'path';
+import {SourceFile} from 'ts-morph';
+import {FileCreationResult} from './interfaces/FileCreationResult';
 
 /**
- * Takes the stringified component information and creates a new file
- * in the project with that information and generated prop types.
+ * Determines the output file path based on component info and options
  *
- * @param componentStringInput returned string containing component information as a string
- * @param currentProject current project active in top level clil entry point.
+ * @param componentInfo - Information about the component
+ * @param options - Write configuration options
+ * @returns The resolved output file path
  */
-async function createSourceFile(
+function resolveOutputPath(
     componentInfo: ComponentInfo,
-    currentProject: Project,
     options: WriteOptions
-) {
-    if (!componentInfo.props.length) return;
+): string {
+    const sourcePath = componentInfo.sourceFilePath;
 
-    const src = componentInfo.sourceFilePath;
-    let out = src.replace(/\.tsx?$/, '.propTypes.ts');
-    if (options.outDir) {
-        const fn = out.split('/').pop();
-        out = `${options.outDir}/${fn}`;
+    // If inline mode is enabled, use the source file path
+    if (options.inline) {
+        return sourcePath;
     }
 
-    const file = options.inline
-        ? currentProject.getSourceFileOrThrow(src)
-        : currentProject.createSourceFile(out, '', {overwrite: true});
+    // Otherwise create a new .propTypes.ts file
+    const baseOutputPath = sourcePath.replace(/\.tsx?$/, '.propTypes.ts');
 
+    // If outDir is specified, move the file to that directory
+    if (options.outDir) {
+        const fileName = path.basename(baseOutputPath);
+        return path.join(options.outDir, fileName);
+    }
+
+    return baseOutputPath;
+}
+
+/**
+ * Adds PropTypes import to a source file if it doesn't exist
+ *
+ * @param file - The source file to modify
+ */
+function ensurePropTypesImport(file: SourceFile): void {
     if (!file.getImportDeclaration('prop-types')) {
         file.addImportDeclaration({
             moduleSpecifier: 'prop-types',
             defaultImport: 'PropTypes',
         });
     }
+}
 
-    file.addStatements((w) => w.write(generateComponentString(componentInfo)));
-    await file.save();
-    if (options.prettier) {
-        const target = options.inline ? src : out;
-        await formatSingleFile(target);
+/**
+ * Creates or updates a source file with PropTypes declarations for a React component.
+ *
+ * This function generates PropTypes declarations from component information and
+ * writes them to a file. It can either create a new .propTypes.ts file or append
+ * the declarations to the original component file based on the options provided.
+ *
+ * If the prettier option is enabled, the generated file will be formatted using
+ * the project's Prettier configuration (if available).
+ *
+ * @param componentInfo - Information about the component and its props
+ * @param project - The ts-morph Project instance
+ * @param options - Configuration options for the file writing operation
+ * @returns Promise resolving to the result of the file creation
+ *
+ * @example
+ * // Create a separate PropTypes file
+ * await createSourceFile(component, project, { outDir: './generated' });
+ *
+ * // Append PropTypes to the original file and format with Prettier
+ * await createSourceFile(component, project, { inline: true, prettier: true });
+ */
+async function createSourceFile(
+    componentInfo: ComponentInfo,
+    project: Project,
+    options: WriteOptions
+): Promise<FileCreationResult> {
+    try {
+        // Skip components without props
+        if (!componentInfo.props.length) {
+            return {
+                success: false,
+                filePath: componentInfo.sourceFilePath,
+                error: 'Component has no props',
+            };
+        }
+
+        // Determine the output file path
+        const sourcePath = componentInfo.sourceFilePath;
+        const outputPath = resolveOutputPath(componentInfo, options);
+
+        // Get or create the source file
+        const file = options.inline
+            ? project.getSourceFileOrThrow(sourcePath)
+            : project.createSourceFile(outputPath, '', {overwrite: true});
+
+        // Add PropTypes import if needed
+        ensurePropTypesImport(file);
+
+        // Generate and add PropTypes declaration
+        const propTypesDeclaration = generateComponentString(componentInfo);
+        file.addStatements((writer) => writer.write(propTypesDeclaration));
+
+        // Save the file
+        await file.save();
+
+        // Format the file if requested
+        if (options.prettier) {
+            await formatSingleFile(outputPath);
+        }
+
+        return {
+            success: true,
+            filePath: outputPath,
+        };
+    } catch (error) {
+        return {
+            success: false,
+            filePath: componentInfo.sourceFilePath,
+            error: error instanceof Error ? error.message : String(error),
+        };
     }
 }
 

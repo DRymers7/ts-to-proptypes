@@ -1,75 +1,82 @@
 import {ComponentInfo} from './interfaces/ComponentInfo';
 import {ParsedProp} from './interfaces/ParsedProp';
-import {typeMap} from './types';
 import {NormalizedPropType} from './types';
+import {PROP_TYPE_VALIDATORS} from './constants';
 
 /**
- * Generates the PropTypes validator string based on the normalized type
+ * Generates a PropTypes validator string based on a normalized TypeScript type.
  *
- * @param normalizedType The normalized prop type
- * @returns String representation of the PropType validator
+ * This function converts our internal type representation into the corresponding
+ * PropTypes validator expression as a string.
+ *
+ * @param normalizedType - The normalized TypeScript type
+ * @returns A string representation of the PropTypes validator
  */
 function generatePropTypeValidator(normalizedType: NormalizedPropType): string {
-    switch (normalizedType.kind) {
+    const {kind} = normalizedType;
+
+    // Handle each type kind with its specific generator
+    switch (kind) {
         case 'primitive':
-            return normalizedType.name === 'boolean'
-                ? 'PropTypes.bool'
-                : `PropTypes.${normalizedType.name}`;
-
+            return PROP_TYPE_VALIDATORS.primitive(normalizedType);
         case 'array':
-            return 'PropTypes.array';
-
+            return PROP_TYPE_VALIDATORS.array();
         case 'object':
-            return 'PropTypes.object';
-
+            return PROP_TYPE_VALIDATORS.object();
         case 'function':
-            return 'PropTypes.func';
-
-        case 'oneOf':
-            const values = normalizedType.values
-                .map((value) =>
-                    typeof value === 'string' ? `'${value}'` : String(value)
-                )
-                .join(', ');
-            return `PropTypes.oneOf([${values}])`;
-
-        case 'oneOfType':
-            const types = normalizedType.types
-                .map((type) => generatePropTypeValidator(type))
-                .join(', ');
-            return `PropTypes.oneOfType([${types}])`;
-
+            return PROP_TYPE_VALIDATORS.function();
         case 'any':
+            return PROP_TYPE_VALIDATORS.any();
+        case 'oneOf':
+            return PROP_TYPE_VALIDATORS.oneOf(normalizedType);
+        case 'oneOfType':
+            return PROP_TYPE_VALIDATORS.oneOfType(
+                normalizedType,
+                generatePropTypeValidator
+            );
+        default:
+            // Exhaustiveness check ensures we've handled all type kinds
+            const _exhaustiveCheck: never = normalizedType;
             return 'PropTypes.any';
     }
 }
 
 /**
- * Maps a given prop type to the correct prop reference for JSX/TSX, and
- * returns a string that can be used to build the final component string.
+ * Creates a PropTypes validator string for a parsed prop, adding the required modifier if needed.
  *
- * @param parsedProp ParsedProp from the array of parsed props in componentInfo
- * @returns string value of mapped prop
+ * @param parsedProp - The parsed prop with its type and required status
+ * @returns A complete PropTypes validator string for the prop
  */
-function mapFromTypeMap(parsedProp: ParsedProp): string {
-    const propType = generatePropTypeValidator(parsedProp.type);
-    return parsedProp.required ? `${propType}.isRequired` : propType;
+function createPropValidator(parsedProp: ParsedProp): string {
+    const propTypeValidator = generatePropTypeValidator(parsedProp.type);
+    return parsedProp.required
+        ? `${propTypeValidator}.isRequired`
+        : propTypeValidator;
 }
 
 /**
- * Accepts the extracted props and component information, and generates
- * a string of the component, with the .PropTypes attributes filled in.
+ * Generates the PropTypes declaration string for a React component.
  *
- * @param componentInfo ComponentInfo interface created from parser
- * @returns string value of a component, to be written into a file later.
+ * This function takes the component information with parsed props and generates
+ * a complete PropTypes declaration that can be added to the component file.
+ *
+ * @param componentInfo - Information about the component and its props
+ * @returns A string containing the complete PropTypes declaration
  */
 function generateComponentString(componentInfo: ComponentInfo): string {
-    const lines = componentInfo.props.map((prop) => {
-        const propStringValue = mapFromTypeMap(prop);
-        return `  ${prop.name}: ${propStringValue},`;
+    // Transform each prop into its PropTypes declaration line
+    const propLines = componentInfo.props.map((prop) => {
+        const propValidator = createPropValidator(prop);
+        return `  ${prop.name}: ${propValidator},`;
     });
 
-    return `${componentInfo.name}.propTypes = {\n${lines.join('\n')}\n};`;
+    // If there are no props, add an empty line to maintain proper formatting
+    if (propLines.length === 0) {
+        propLines.push('');
+    }
+
+    // Combine all lines into the final PropTypes declaration
+    return `${componentInfo.name}.propTypes = {\n${propLines.join('\n')}\n};`;
 }
 
 export default generateComponentString;

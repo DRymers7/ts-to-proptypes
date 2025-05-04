@@ -1,120 +1,198 @@
 import {ComponentInfo} from './interfaces/ComponentInfo';
-import {Node} from 'ts-morph';
+import {
+    Node,
+    ParameterDeclaration,
+    FunctionDeclaration,
+    ArrowFunction,
+    ClassDeclaration,
+    VariableDeclaration,
+    TypeParameterDeclaration,
+} from 'ts-morph';
 import extractPropsFromParameter from './extractPropsFromParameter';
 import path from 'path';
 
 /**
- * Creates the ComponentInfo object from the extracted props.
- *
- * @param name name of the component
- * @param params ParameterDeclaration array from node
- * @param filePath file path of source component
- * @returns ComponentInfo object
+ * Possible component declaration types that can be parsed
  */
-function buildComponentInfo(
-    name: string,
-    params: import('ts-morph').ParameterDeclaration[],
-    filePath: string
-): ComponentInfo | null {
-    if (params.length === 0) return null;
-    const props = extractPropsFromParameter(params[0]);
-    return {name, props, sourceFilePath: filePath};
-}
+type ComponentDeclarationType =
+    | FunctionDeclaration
+    | ArrowFunction
+    | VariableDeclaration
+    | ClassDeclaration;
 
 /**
- * Function responsible for determining component name, based on class declaration, function declaration, etc.
+ * Determines component name based on declaration type and export name.
+ * For default exports, extracts the name from the declaration or falls back to the filename.
  *
- * @param name provided name from AST
- * @param declaration current node in AST
- * @param filePath filepath to source file
- * @returns string name of the component
+ * @param exportName - The name from the export declaration
+ * @param declaration - The AST node of the component declaration
+ * @param filePath - Path to the source file
+ * @returns The resolved component name
  */
 function determineComponentName(
-    name: string,
+    exportName: string,
     declaration: Node,
     filePath: string
 ): string {
-    if (name === 'default') {
-        if (Node.isFunctionDeclaration(declaration) && declaration.getName()) {
-            return declaration.getName()!;
-        } else if (
-            Node.isClassDeclaration(declaration) &&
-            declaration.getName()
-        ) {
-            return declaration.getName()!;
-        } else if (Node.isVariableDeclaration(declaration)) {
-            return declaration.getName();
-        }
-        // fallback to file name
-        const base = path.basename(filePath, path.extname(filePath));
-        return base.charAt(0).toUpperCase() + base.slice(1);
+    // Handle non-default exports directly
+    if (exportName !== 'default') {
+        return exportName;
     }
-    return name;
+
+    // Extract name from function declarations
+    if (Node.isFunctionDeclaration(declaration)) {
+        const name = declaration.getName();
+        if (name) return name;
+    }
+
+    // Extract name from class declarations
+    else if (Node.isClassDeclaration(declaration)) {
+        const name = declaration.getName();
+        if (name) return name;
+    }
+
+    // Extract name from variable declarations
+    else if (Node.isVariableDeclaration(declaration)) {
+        return declaration.getName();
+    }
+
+    // Fallback to capitalized filename
+    const filename = path.basename(filePath, path.extname(filePath));
+    return filename.charAt(0).toUpperCase() + filename.slice(1);
 }
 
 /**
- * Parses the given component declaration, differentiating between Functions/ArrowFunctions
- * and Class Declarations.
+ * Extracts component props from function component parameters
  *
- * @param name key value from exported declarations readonly map
- * @param declaration individual declaration from ExportedDeclarations array for this key in the map.
- * @param filePath filepath of the original source file.
- * @returns Array of componentInfo, or null, if nothing is able to be extracted.
+ * @param componentName - Name of the component
+ * @param parameters - The parameter declarations from the function
+ * @param filePath - Path to the source file
+ * @returns Component info object or null if no props could be extracted
+ */
+function extractPropsFromFunctionComponent(
+    componentName: string,
+    parameters: ParameterDeclaration[],
+    filePath: string
+): ComponentInfo | null {
+    if (parameters.length === 0) {
+        return null;
+    }
+
+    const props = extractPropsFromParameter(parameters[0]);
+    return {
+        name: componentName,
+        props,
+        sourceFilePath: filePath,
+    };
+}
+
+/**
+ * Extracts component props from class component type parameters
+ *
+ * @param componentName - Name of the component
+ * @param typeParameters - The type parameters from the class
+ * @param filePath - Path to the source file
+ * @returns Component info object or null if no props could be extracted
+ */
+function extractPropsFromClassComponent(
+    componentName: string,
+    typeParameters: TypeParameterDeclaration[] | undefined,
+    filePath: string
+): ComponentInfo | null {
+    // Check if we have type parameters (like in React.Component<Props>)
+    if (!typeParameters || typeParameters.length === 0) {
+        return null;
+    }
+
+    try {
+        // Get the first type parameter constraint (the Props interface)
+        const propsTypeNode = typeParameters[0].getConstraint();
+        if (!propsTypeNode) {
+            return null;
+        }
+
+        // Create an adapter to extract props from the type
+        const propsAdapter: Pick<ParameterDeclaration, 'getType'> = {
+            getType: () => propsTypeNode.getType(),
+        };
+
+        const props = extractPropsFromParameter(
+            propsAdapter as ParameterDeclaration
+        );
+        return {
+            name: componentName,
+            props,
+            sourceFilePath: filePath,
+        };
+    } catch (error) {
+        // If we can't extract the props, return null
+        return null;
+    }
+}
+
+/**
+ * Parses a React component declaration and extracts its props.
+ *
+ * This function analyzes different types of React component declarations (function
+ * components, arrow function components, class components) and extracts their props
+ * into a standardized ComponentInfo structure.
+ *
+ * @param exportName - The name from the export declaration
+ * @param declaration - The AST node of the component declaration
+ * @param filePath - Path to the source file
+ * @returns Component info object or null if not a valid component
  */
 function parseComponentDeclaration(
-    name: string,
+    exportName: string,
     declaration: Node,
     filePath: string
 ): ComponentInfo | null {
-    const componentName = determineComponentName(name, declaration, filePath);
+    const componentName = determineComponentName(
+        exportName,
+        declaration,
+        filePath
+    );
 
-    // function declarations
+    // Handle function declarations
     if (Node.isFunctionDeclaration(declaration)) {
-        return buildComponentInfo(
+        return extractPropsFromFunctionComponent(
             componentName,
             declaration.getParameters(),
             filePath
         );
     }
 
-    // arrow functions
+    // Handle arrow functions
     if (Node.isArrowFunction(declaration)) {
-        return buildComponentInfo(
+        return extractPropsFromFunctionComponent(
             componentName,
             declaration.getParameters(),
             filePath
         );
     }
 
-    // variable = () =>
+    // Handle variable declarations with arrow function initializers
     if (Node.isVariableDeclaration(declaration)) {
-        const init = declaration.getInitializer();
-        if (init && Node.isArrowFunction(init)) {
-            return buildComponentInfo(
+        const initializer = declaration.getInitializer();
+        if (initializer && Node.isArrowFunction(initializer)) {
+            return extractPropsFromFunctionComponent(
                 componentName,
-                init.getParameters(),
+                initializer.getParameters(),
                 filePath
             );
         }
     }
 
-    // class components
+    // Handle class components
     if (Node.isClassDeclaration(declaration)) {
-        const tparams = declaration.getTypeParameters();
-        if (tparams?.[0]) {
-            // hack: TS-morph doesn't give ParameterDeclaration for type params;
-            // assume first type param extends Props interface, so we need custom extraction
-            const propsTypeNode = tparams[0].getConstraintOrThrow();
-            // build a fake parameter if needed; here just skip to null if unsupported
-            const fakeParam = {
-                getType: () => propsTypeNode.getType(),
-                hasFlags: () => false,
-            } as any;
-            const props = extractPropsFromParameter(fakeParam as any);
-            return {name: componentName, props, sourceFilePath: filePath};
-        }
+        return extractPropsFromClassComponent(
+            componentName,
+            declaration.getTypeParameters(),
+            filePath
+        );
     }
 
+    // Not a recognized component type
     return null;
 }
 

@@ -1,57 +1,67 @@
 import {ParsedProp} from './interfaces/ParsedProp';
 import {normalizePropType} from './normalizePropType';
-import {SymbolFlags, Type} from 'ts-morph';
+import {ParameterDeclaration, Symbol, SymbolFlags, Type} from 'ts-morph';
 
 /**
- * Extracts props from a given parameter declaration.
+ * Extracts prop type information from a React component parameter declaration.
  *
- * @param param first element (typically the prop) in the parameter declaration array
- * @returns array of parsed props
+ * This function analyzes TypeScript type information to extract prop types and their
+ * characteristics (name, required status, and normalized type representation). It also
+ * recursively extracts nested properties from object types.
+ *
+ * @param param - The parameter declaration object from ts-morph, typically the props parameter
+ * @returns An array of parsed prop information with normalized type representations
  */
-function extractPropsFromParameter(
-    param: import('ts-morph').ParameterDeclaration
-): ParsedProp[] {
-    const type = param.getType();
-    const props: ParsedProp[] = [];
+function extractPropsFromParameter(param: ParameterDeclaration): ParsedProp[] {
+    const rootType = param.getType();
 
-    function extractNestedProps(
+    /**
+     * Recursive function to extract props from a type, including nested properties
+     *
+     * @param propType - The TypeScript type to extract props from
+     * @param parentRequired - Whether the parent prop is required
+     * @returns Array of parsed props from this type and its nested types
+     */
+    const extractPropsFromType = (
         propType: Type,
-        propName: string,
-        required: boolean
-    ) {
-        if (propType.isObject() && !propType.isArray()) {
-            propType.getProperties().forEach((nestedSym) => {
-                const nestedName = nestedSym.getName();
-                const nestedType = nestedSym.getTypeAtLocation(param);
-                const nestedNormalizedType = normalizePropType(nestedType);
-                const nestedRequired =
-                    !nestedSym.hasFlags(SymbolFlags.Optional) && required; // Inherit parent's required status
+        parentRequired: boolean = true
+    ): ParsedProp[] => {
+        // Extract direct properties from the type
+        const directProps = propType.getProperties().map((propSymbol) => {
+            const name = propSymbol.getName();
+            const rawType = propSymbol.getTypeAtLocation(param);
+            const isRequired =
+                !propSymbol.hasFlags(SymbolFlags.Optional) && parentRequired;
 
-                props.push({
-                    name: nestedName,
-                    type: nestedNormalizedType,
-                    required: nestedRequired,
-                });
+            return {
+                name,
+                type: normalizePropType(rawType),
+                required: isRequired,
+                symbol: propSymbol,
+                rawType,
+            };
+        });
 
-                // Recursively extract deeper nested props
-                extractNestedProps(nestedType, nestedName, nestedRequired);
-            });
-        }
-    }
+        // For each direct prop that is an object type, extract nested props
+        const nestedProps = directProps
+            .filter(
+                (prop) => prop.rawType.isObject() && !prop.rawType.isArray()
+            )
+            .flatMap((prop) =>
+                extractPropsFromType(prop.rawType, prop.required)
+            );
 
-    type.getProperties().forEach((propSymbol) => {
-        const name = propSymbol.getName();
-        const rawType = propSymbol.getTypeAtLocation(param);
-        const normalizedType = normalizePropType(rawType);
-        const required = !propSymbol.hasFlags(SymbolFlags.Optional);
+        // Return all props without the temporary metadata
+        return [...directProps, ...nestedProps].map(
+            ({name, type, required}) => ({
+                name,
+                type,
+                required,
+            })
+        );
+    };
 
-        props.push({name, type: normalizedType, required});
-
-        // Extract nested properties
-        extractNestedProps(rawType, name, required);
-    });
-
-    return props;
+    return extractPropsFromType(rootType);
 }
 
 export default extractPropsFromParameter;

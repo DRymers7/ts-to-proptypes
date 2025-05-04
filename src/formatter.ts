@@ -1,26 +1,31 @@
 import {promises as fs} from 'fs';
 import path from 'path';
-import type {Options} from 'prettier';
+import {FormatterOptions} from './interfaces/FormatterOptions';
+import {FormattingResult} from './interfaces/FormattingResult';
 
 /**
- * Formats files using Prettier with project-specific configuration.
- * Quietly skips formatting if Prettier is not installed or no config is found.
+ * Formats a collection of files using Prettier with project-specific configuration.
  *
- * @param filePaths Array of file paths to format
- * @param verbose If true, outputs information about the formatting process
- * @returns Promise resolving to an array of formatted file paths
+ * This function automatically detects Prettier configuration from the user's project
+ * and applies it to the specified files. It gracefully handles cases where Prettier
+ * is not available or no configuration can be found.
+ *
+ * @param filePaths - Array of file paths to format
+ * @param options - Configuration options for the formatter
+ * @returns Promise resolving to an array of successfully formatted file paths
  */
 export async function formatWithPrettier(
-    filePaths: string[],
-    verbose: boolean = false
+    filePaths: readonly string[],
+    options: FormatterOptions = {}
 ): Promise<string[]> {
+    const {verbose = false} = options;
+
     if (!filePaths.length) {
         return [];
     }
 
-    let prettier;
-
     // Try to import prettier - if it fails, silently skip formatting
+    let prettier;
     try {
         prettier = await import('prettier');
     } catch (error) {
@@ -30,15 +35,14 @@ export async function formatWithPrettier(
         return [];
     }
 
-    // Get the directory of the first file to look for config
-    const firstFileDir = path.dirname(filePaths[0]);
-    const formattedFiles: string[] = [];
-
+    // Process all files and gather results
     try {
+        const firstFileDir = path.dirname(filePaths[0]);
+
         // Find the nearest Prettier config file, null if none found
-        const prettierConfig = await prettier.default
-            .resolveConfig(firstFileDir)
-            .catch(() => null);
+        const prettierConfig =
+            options.prettierConfig ||
+            (await prettier.resolveConfig(firstFileDir).catch(() => null));
 
         if (!prettierConfig && verbose) {
             console.log(
@@ -46,57 +50,107 @@ export async function formatWithPrettier(
             );
         }
 
-        // Format each file
+        // Process each file sequentially to avoid potential race conditions
+        const results: FormattingResult[] = [];
         for (const filePath of filePaths) {
-            try {
-                // Read the file
-                const fileContent = await fs.readFile(filePath, 'utf-8');
-
-                // Format with Prettier (using config if found)
-                const formatted = await prettier.default.format(fileContent, {
-                    ...prettierConfig,
-                    filepath: filePath, // This helps Prettier determine the parser based on file extension
-                } as Options);
-
-                // Write the formatted content back to the file
-                await fs.writeFile(filePath, formatted, 'utf-8');
-
-                formattedFiles.push(filePath);
-
-                if (verbose) {
-                    console.log(`✓ Formatted ${path.basename(filePath)}`);
-                }
-            } catch (fileError) {
-                // Silently continue if formatting fails for a file
-                if (verbose) {
-                    console.log(
-                        `Skipping formatting for ${path.basename(filePath)}`
-                    );
-                }
-            }
-        }
-
-        if (verbose && formattedFiles.length > 0) {
-            console.log(
-                `Formatted ${formattedFiles.length}/${filePaths.length} files`
+            results.push(
+                await formatSingleFileWithPrettier(
+                    filePath,
+                    prettier,
+                    prettierConfig
+                )
             );
         }
 
-        return formattedFiles;
+        // Log results if verbose
+        if (verbose) {
+            const successCount = results.filter((r) => r.success).length;
+            results.forEach((result) => {
+                if (result.success) {
+                    console.log(
+                        `✓ Formatted ${path.basename(result.filePath)}`
+                    );
+                } else {
+                    console.log(
+                        `⨯ Skipping ${path.basename(result.filePath)}: ${result.error}`
+                    );
+                }
+            });
+
+            if (successCount > 0) {
+                console.log(
+                    `Formatted ${successCount}/${filePaths.length} files`
+                );
+            }
+        }
+
+        // Return only the successfully formatted file paths
+        return results
+            .filter((result) => result.success)
+            .map((result) => result.filePath);
     } catch (error) {
-        // Silently fail if any error occurs during the formatting process
+        // Fail silently
+        if (verbose) {
+            console.log('Error during formatting process:', error);
+        }
         return [];
     }
 }
 
 /**
- * Formats a single file using Prettier with project-specific configuration.
- * Quietly skips formatting if Prettier is not installed or no config is found.
+ * Internal helper to format a single file with the provided Prettier instance
  *
- * @param filePath Path to the file to format
+ * @param filePath - Path to the file to format
+ * @param prettier - Prettier module instance
+ * @param config - Prettier configuration to use
+ * @returns Promise resolving to the formatting result
+ */
+async function formatSingleFileWithPrettier(
+    filePath: string,
+    prettier: typeof import('prettier'),
+    config: Record<string, unknown> | null
+): Promise<FormattingResult> {
+    try {
+        // Read the file
+        const fileContent = await fs.readFile(filePath, 'utf-8');
+
+        // Format with Prettier
+        const formatted = await prettier.format(fileContent, {
+            ...config,
+            filepath: filePath,
+        });
+
+        // Write the formatted content back to the file
+        await fs.writeFile(filePath, formatted, 'utf-8');
+
+        return {
+            filePath,
+            success: true,
+        };
+    } catch (error) {
+        return {
+            filePath,
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+        };
+    }
+}
+
+/**
+ * Formats a single file using Prettier with project-specific configuration.
+ *
+ * This is a convenience function that wraps formatWithPrettier for the common
+ * case of formatting just one file. It quietly skips formatting if Prettier
+ * is not installed or no configuration can be found.
+ *
+ * @param filePath - Path to the file to format
+ * @param options - Configuration options for the formatter
  * @returns Promise resolving to whether formatting was successful
  */
-export async function formatSingleFile(filePath: string): Promise<boolean> {
-    const formatted = await formatWithPrettier([filePath], false);
+export async function formatSingleFile(
+    filePath: string,
+    options: FormatterOptions = {}
+): Promise<boolean> {
+    const formatted = await formatWithPrettier([filePath], options);
     return formatted.length > 0;
 }
