@@ -15,8 +15,16 @@ describe('createSourceFile', () => {
             name: 'TestComponent',
             sourceFilePath: 'src/components/TestComponent.tsx',
             props: [
-                {name: 'title', type: 'string', required: true},
-                {name: 'count', type: 'number', required: false},
+                {
+                    name: 'title',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: true,
+                },
+                {
+                    name: 'count',
+                    type: {kind: 'primitive', name: 'number'},
+                    required: false,
+                },
             ],
         };
 
@@ -55,7 +63,18 @@ describe('createSourceFile', () => {
         const mockComponent: ComponentInfo = {
             name: 'TestComponent',
             sourceFilePath: 'src/components/TestComponent.tsx',
-            props: [{name: 'foo', type: 'boolean', required: true}],
+            props: [
+                {
+                    name: 'title',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: true,
+                },
+                {
+                    name: 'count',
+                    type: {kind: 'primitive', name: 'number'},
+                    required: false,
+                },
+            ],
         };
 
         await createSourceFile(mockComponent, project, {

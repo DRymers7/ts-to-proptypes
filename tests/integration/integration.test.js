@@ -193,7 +193,7 @@ export function MixedPropsComponent({
         name: 'UnionTypesComponent.tsx',
         content: `
 import React from 'react';
-
+    
 type Props = {
     variant: 'primary' | 'secondary' | 'danger';
     size?: 'small' | 'medium' | 'large';
@@ -215,8 +215,8 @@ export function UnionTypesComponent({
             {value}
         </button>
     );
-}`,   
-    }
+}`,
+    },
 ];
 
 // PropType mapping for verification
@@ -229,7 +229,7 @@ const TYPE_MAPPING = {
     object: 'object',
     any: 'any',
     oneOf: 'oneOf',
-    oneOfType: 'oneOfType'
+    oneOfType: 'oneOfType',
 };
 
 async function readFile(filePath) {
@@ -366,46 +366,52 @@ async function verifyPropTypesOutput(
     expect(propTypesBlockMatch).not.toBeNull();
 
     const propTypesBlock = propTypesBlockMatch[1];
-    
+
     // Updated regex to also handle oneOf and oneOfType patterns
     const actualProps = [];
     const lines = propTypesBlock.trim().split('\n');
-    
+
     for (const line of lines) {
         const trimmedLine = line.trim();
         if (!trimmedLine || trimmedLine === '') continue;
-        
+
         // Try basic props (string, number, bool, etc.)
-        let match = trimmedLine.match(/(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/);
+        let match = trimmedLine.match(
+            /(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/
+        );
         if (match) {
             actualProps.push({
                 name: match[1],
                 type: match[2],
-                required: !!match[3]
+                required: !!match[3],
             });
             continue;
         }
-        
+
         // Try oneOf
-        match = trimmedLine.match(/(\w+):\s*PropTypes\.oneOf\(\[(.*?)\]\)(\.isRequired)?/);
+        match = trimmedLine.match(
+            /(\w+):\s*PropTypes\.oneOf\(\[(.*?)\]\)(\.isRequired)?/
+        );
         if (match) {
             actualProps.push({
                 name: match[1],
                 type: 'oneOf',
-                values: match[2],  // Keep as string for simple verification
-                required: !!match[3]
+                values: match[2], // Keep as string for simple verification
+                required: !!match[3],
             });
             continue;
         }
-        
+
         // Try oneOfType
-        match = trimmedLine.match(/(\w+):\s*PropTypes\.oneOfType\(\[(.*?)\]\)(\.isRequired)?/);
+        match = trimmedLine.match(
+            /(\w+):\s*PropTypes\.oneOfType\(\[(.*?)\]\)(\.isRequired)?/
+        );
         if (match) {
             actualProps.push({
                 name: match[1],
                 type: 'oneOfType',
-                types: match[2],  // Keep as string for simple verification
-                required: !!match[3]
+                types: match[2], // Keep as string for simple verification
+                required: !!match[3],
             });
             continue;
         }
@@ -418,8 +424,8 @@ async function verifyPropTypesOutput(
     let failures = [];
 
     for (const expectedProp of expectedProps) {
-        const { name, type, required } = expectedProp;
-        const actualProp = actualProps.find(p => p.name === name);
+        const {name, type, required} = expectedProp;
+        const actualProp = actualProps.find((p) => p.name === name);
 
         if (!actualProp) {
             console.error(`\nMissing prop: ${name}`);
@@ -432,12 +438,16 @@ async function verifyPropTypesOutput(
             // For literal unions (oneOf)
             if (type.match(/'[^']*'|"[^"]*"/)) {
                 if (actualProp.type !== 'oneOf') {
-                    console.warn(`\nExpected oneOf for ${name} but got ${actualProp.type}`);
+                    console.warn(
+                        `\nExpected oneOf for ${name} but got ${actualProp.type}`
+                    );
                 }
-            } 
+            }
             // For type unions (oneOfType)
             else if (!['oneOf', 'oneOfType'].includes(actualProp.type)) {
-                console.warn(`\nExpected oneOf or oneOfType for ${name} but got ${actualProp.type}`);
+                console.warn(
+                    `\nExpected oneOf or oneOfType for ${name} but got ${actualProp.type}`
+                );
             }
         }
         // Check basic types
@@ -467,19 +477,15 @@ async function verifyPropTypesOutput(
     }
 
     // Check for extra props
-    const actualNames = actualProps.map(p => p.name);
-    const expectedNames = expectedProps.map(p => p.name);
+    const actualNames = actualProps.map((p) => p.name);
+    const expectedNames = expectedProps.map((p) => p.name);
 
-    const extras = actualNames.filter(
-        name => !expectedNames.includes(name)
-    );
+    const extras = actualNames.filter((name) => !expectedNames.includes(name));
     if (extras.length > 0) {
         console.warn(`\nExtra props found: ${extras.join(', ')}`);
     }
 
-    const missing = expectedNames.filter(
-        name => !actualNames.includes(name)
-    );
+    const missing = expectedNames.filter((name) => !actualNames.includes(name));
     if (missing.length > 0) {
         console.error(`\nMissing props: ${missing.join(', ')}`);
         failures.push(`Missing props: ${missing.join(', ')}`);
@@ -661,39 +667,5 @@ describe('CLI Integration Tests', () => {
         console.log(
             'Note: The prettier formatting test is being skipped due to known parser.ts issues'
         );
-
-        // No actual assertions - this is a skipped test
-        // If you fix the parser.ts error, you can uncomment the real prettier test below
-
-        /*
-        // Get first input file for prettier test
-        const inputFiles = (await fs.readdir(INPUT_DIR))
-            .filter(file => file.endsWith('.tsx'));
-        
-        expect(inputFiles.length).toBeGreaterThan(0);
-        
-        const testFile = inputFiles[0];
-        const srcPath = path.join(INPUT_DIR, testFile);
-        const componentName = getComponentName(srcPath);
-        
-        // Run CLI with prettier flag
-        console.log(`Testing prettier formatting with file: ${testFile}`);
-        const outputPath = path.relative(process.cwd(), OUTPUT_DIR);
-        const result = runCLI(`-s "${srcPath}" -o "${outputPath}" --prettier`);
-        
-        if (result === null) {
-            console.warn("⚠️ CLI execution failed, skipping prettier verification");
-            return;
-        }
-        
-        // Verify prettier formatting
-        const outputFilePath = path.join(OUTPUT_DIR, `${componentName}.propTypes.ts`);
-        const content = await readFile(outputFilePath);
-        
-        // Check for expected prettier formatting (single quotes based on your prettier config)
-        expect(content).toContain("import PropTypes from 'prop-types';");
-        expect(content).toContain(`${componentName}.propTypes = {`);
-        console.log(`✓ Verified prettier formatting for ${componentName}`);
-        */
     });
 });

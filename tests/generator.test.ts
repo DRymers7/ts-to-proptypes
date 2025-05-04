@@ -7,9 +7,21 @@ describe('generateComponentString tests', () => {
     // Basic tests
     it('should generate component string correctly with primitive types', () => {
         const testProps: ParsedProp[] = [
-            {name: 'testProp', type: {kind: 'primitive', name: 'string'}, required: true},
-            {name: 'testProp2', type: {kind: 'primitive', name: 'number'}, required: false},
-            {name: 'testProp3', type: {kind: 'primitive', name: 'boolean'}, required: true},
+            {
+                name: 'testProp',
+                type: {kind: 'primitive', name: 'string'},
+                required: true,
+            },
+            {
+                name: 'testProp2',
+                type: {kind: 'primitive', name: 'number'},
+                required: false,
+            },
+            {
+                name: 'testProp3',
+                type: {kind: 'primitive', name: 'boolean'},
+                required: true,
+            },
         ];
         const testComponentInfo: ComponentInfo = {
             name: 'TestComponent',
@@ -70,9 +82,12 @@ describe('generateComponentString tests', () => {
         const props: ParsedProp[] = [
             {
                 name: 'variant',
-                type: {kind: 'oneOf', values: ['primary', 'secondary', 'danger']},
-                required: true
-            }
+                type: {
+                    kind: 'oneOf',
+                    values: ['primary', 'secondary', 'danger'],
+                },
+                required: true,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'ButtonComponent',
@@ -94,8 +109,8 @@ describe('generateComponentString tests', () => {
             {
                 name: 'level',
                 type: {kind: 'oneOf', values: [1, 2, 3]},
-                required: false
-            }
+                required: false,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'LevelComponent',
@@ -117,8 +132,8 @@ describe('generateComponentString tests', () => {
             {
                 name: 'enabled',
                 type: {kind: 'oneOf', values: [true, false]},
-                required: true
-            }
+                required: true,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'ToggleComponent',
@@ -140,8 +155,8 @@ describe('generateComponentString tests', () => {
             {
                 name: 'value',
                 type: {kind: 'oneOf', values: [1, 'default', true]},
-                required: false
-            }
+                required: false,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'MixedComponent',
@@ -168,10 +183,10 @@ describe('generateComponentString tests', () => {
                     types: [
                         {kind: 'primitive', name: 'string'},
                         {kind: 'primitive', name: 'number'},
-                    ]
+                    ],
                 },
-                required: true
-            }
+                required: true,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'IdentifierComponent',
@@ -197,11 +212,11 @@ describe('generateComponentString tests', () => {
                     types: [
                         {kind: 'primitive', name: 'string'},
                         {kind: 'array'},
-                        {kind: 'function'}
-                    ]
+                        {kind: 'function'},
+                    ],
                 },
-                required: false
-            }
+                required: false,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'ContentComponent',
@@ -228,15 +243,12 @@ describe('generateComponentString tests', () => {
                         {kind: 'primitive', name: 'string'},
                         {
                             kind: 'oneOfType',
-                            types: [
-                                {kind: 'array'},
-                                {kind: 'object'}
-                            ]
-                        }
-                    ]
+                            types: [{kind: 'array'}, {kind: 'object'}],
+                        },
+                    ],
                 },
-                required: true
-            }
+                required: true,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'NestedComponent',
@@ -256,12 +268,16 @@ describe('generateComponentString tests', () => {
     // Multiple prop types
     it('should generate correct PropTypes for components with mixed prop types', () => {
         const props: ParsedProp[] = [
-            {name: 'title', type: {kind: 'primitive', name: 'string'}, required: true},
+            {
+                name: 'title',
+                type: {kind: 'primitive', name: 'string'},
+                required: true,
+            },
             {name: 'data', type: {kind: 'array'}, required: true},
             {
                 name: 'size',
                 type: {kind: 'oneOf', values: ['small', 'medium', 'large']},
-                required: false
+                required: false,
             },
             {
                 name: 'handler',
@@ -269,11 +285,11 @@ describe('generateComponentString tests', () => {
                     kind: 'oneOfType',
                     types: [
                         {kind: 'function'},
-                        {kind: 'primitive', name: 'string'}
-                    ]
+                        {kind: 'primitive', name: 'string'},
+                    ],
                 },
-                required: false
-            }
+                required: false,
+            },
         ];
         const componentInfo: ComponentInfo = {
             name: 'MixedPropsComponent',

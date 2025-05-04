@@ -2,7 +2,7 @@ import {CodeBlockWriter, Project} from 'ts-morph';
 import generateComponentString from './generator';
 import {ComponentInfo} from './interfaces/ComponentInfo';
 import {WriteOptions} from './types';
-import {formatFile} from './formatFile';
+import {formatSingleFile} from './formatter';
 
 /**
  * Takes the stringified component information and creates a new file
@@ -40,7 +40,7 @@ async function createSourceFile(
     await file.save();
     if (options.prettier) {
         const target = options.inline ? src : out;
-        await formatFile(target);
+        await formatSingleFile(target);
     }
 }
 

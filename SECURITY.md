@@ -12,4 +12,4 @@ Currently, this project is in MVP, so any version 1.0 and above is supported.
 
 Please create an issue, including the version of the package you are using, and a description of the vulnerability. If you'd like to go ahead and fix it, please raise a PR following the community guidelines.
 
-Reported vulnerabilities will be assessed and triaged, by order of severity. 
+Reported vulnerabilities will be assessed and triaged, by order of severity.

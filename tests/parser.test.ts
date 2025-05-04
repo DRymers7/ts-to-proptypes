@@ -30,14 +30,28 @@ describe('parser', () => {
             {
                 name: 'HelloWorld',
                 sourceFilePath: expect.any(String),
-                props: [{name: 'name', type: {kind: 'primitive', name: 'string'}, required: true}],
+                props: [
+                    {
+                        name: 'name',
+                        type: {kind: 'primitive', name: 'string'},
+                        required: true,
+                    },
+                ],
             },
             {
                 name: 'Card',
                 sourceFilePath: expect.any(String),
                 props: [
-                    {name: 'title', type: {kind: 'primitive', name: 'string'}, required: true},
-                    {name: 'description', type: {kind: 'primitive', name: 'string'}, required: false},
+                    {
+                        name: 'title',
+                        type: {kind: 'primitive', name: 'string'},
+                        required: true,
+                    },
+                    {
+                        name: 'description',
+                        type: {kind: 'primitive', name: 'string'},
+                        required: false,
+                    },
                 ],
             },
         ]);
@@ -67,39 +81,43 @@ describe('parser', () => {
         const components = await parseComponents(sourceFile);
 
         expect(components.length).toBe(2);
-        
+
         // Check Button component
-        const buttonComponent = components.find(c => c.name === 'Button');
+        const buttonComponent = components.find((c) => c.name === 'Button');
         expect(buttonComponent).toBeDefined();
         expect(buttonComponent?.props).toContainEqual({
-            name: 'variant', 
-            type: {kind: 'oneOf', values: ['primary', 'secondary', 'danger']}, 
-            required: true
+            name: 'variant',
+            type: {kind: 'oneOf', values: ['primary', 'secondary', 'danger']},
+            required: true,
         });
         expect(buttonComponent?.props).toContainEqual({
-            name: 'size', 
-            type: {kind: 'oneOf', values: ['small', 'medium', 'large']}, 
-            required: false
+            name: 'size',
+            type: {kind: 'oneOf', values: ['small', 'medium', 'large']},
+            required: false,
         });
-        
+
         // Check Input component
-        const inputComponent = components.find(c => c.name === 'Input');
+        const inputComponent = components.find((c) => c.name === 'Input');
         expect(inputComponent).toBeDefined();
-        
+
         // Find the value prop in the Input component
-        const valueProp = inputComponent?.props.find(p => p.name === 'value');
+        const valueProp = inputComponent?.props.find((p) => p.name === 'value');
         expect(valueProp).toBeDefined();
         expect(valueProp?.type.kind).toBe('oneOfType');
-        
+
         // Find the type prop in the Input component
-        const typeProp = inputComponent?.props.find(p => p.name === 'type');
+        const typeProp = inputComponent?.props.find((p) => p.name === 'type');
         expect(typeProp).toBeDefined();
         expect(typeProp?.type.kind).toBe('oneOf');
         if (typeProp?.type.kind === 'oneOf') {
             expect(typeProp?.type.values.length).toBe(3);
-            expect(typeProp?.type.values).toEqual(expect.arrayContaining(['text', 'password', 'number']));
+            expect(typeProp?.type.values).toEqual(
+                expect.arrayContaining(['text', 'password', 'number'])
+            );
         } else {
-            throw new Error(`Expected typeProp kind to be 'oneOf', got ${typeProp?.type.kind}`)
+            throw new Error(
+                `Expected typeProp kind to be 'oneOf', got ${typeProp?.type.kind}`
+            );
         }
     });
 
@@ -165,38 +183,37 @@ describe('parser', () => {
         const components = await parseComponents(sourceFile);
 
         expect(components.length).toBe(2);
-        
+
         // Check List component props
-        const listComponent = components.find(c => c.name === 'List');
+        const listComponent = components.find((c) => c.name === 'List');
         expect(listComponent).toBeDefined();
         expect(listComponent?.props).toContainEqual({
-            name: 'items', 
-            type: {kind: 'array'}, 
-            required: true
+            name: 'items',
+            type: {kind: 'array'},
+            required: true,
         });
         expect(listComponent?.props).toContainEqual({
-            name: 'renderItem', 
-            type: {kind: 'function'}, 
-            required: true
+            name: 'renderItem',
+            type: {kind: 'function'},
+            required: true,
         });
-        
+
         // Check Form component props
-        const formComponent = components.find(c => c.name === 'Form');
+        const formComponent = components.find((c) => c.name === 'Form');
         expect(formComponent).toBeDefined();
         expect(formComponent?.props).toContainEqual({
-            name: 'onSubmit', 
-            type: {kind: 'function'}, 
-            required: true
+            name: 'onSubmit',
+            type: {kind: 'function'},
+            required: true,
         });
         expect(formComponent?.props).toContainEqual(
             expect.objectContaining({
                 name: 'children',
                 required: true,
                 type: expect.objectContaining({
-                    kind: expect.any(String) // Accept any kind, since React.ReactNode might be complex
-                })
+                    kind: expect.any(String), // Accept any kind, since React.ReactNode might be complex
+                }),
             })
         );
-
     });
 });

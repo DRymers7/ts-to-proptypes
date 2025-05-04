@@ -1,4 +1,4 @@
-import {NormalizedPropType} from "../types";
+import {NormalizedPropType} from '../types';
 
 /**
  * Interface representation of a Prop. Should consist of:

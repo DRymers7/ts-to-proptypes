@@ -13,8 +13,12 @@ describe('parseComponentDeclaration', () => {
 
     const createMockArrowFunctionComponent = (code: string) => {
         const project = new Project();
-        const sourceFile = project.createSourceFile('TestArrowComponent.tsx', code);
-        const variable = sourceFile.getVariableDeclarationOrThrow('ArrowComponent');
+        const sourceFile = project.createSourceFile(
+            'TestArrowComponent.tsx',
+            code
+        );
+        const variable =
+            sourceFile.getVariableDeclarationOrThrow('ArrowComponent');
         const func = variable.getInitializerIfKindOrThrow(
             ts.SyntaxKind.ArrowFunction
         );
@@ -33,8 +37,12 @@ describe('parseComponentDeclaration', () => {
 
     const createMockNonComponent = (code: string) => {
         const project = new Project();
-        const sourceFile = project.createSourceFile('TestNonComponent.tsx', code);
-        const variable = sourceFile.getVariableDeclarationOrThrow('NotAComponent');
+        const sourceFile = project.createSourceFile(
+            'TestNonComponent.tsx',
+            code
+        );
+        const variable =
+            sourceFile.getVariableDeclarationOrThrow('NotAComponent');
         return {variable, sourceFile};
     };
 
@@ -60,9 +68,21 @@ describe('parseComponentDeclaration', () => {
             name: 'TestComponent',
             sourceFilePath: expect.any(String),
             props: [
-                {name: 'name', type: {kind: 'primitive', name: 'string'}, required: true},
-                {name: 'count', type: {kind: 'primitive', name: 'number'}, required: true},
-                {name: 'active', type: {kind: 'primitive', name: 'boolean'}, required: true}
+                {
+                    name: 'name',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: true,
+                },
+                {
+                    name: 'count',
+                    type: {kind: 'primitive', name: 'number'},
+                    required: true,
+                },
+                {
+                    name: 'active',
+                    type: {kind: 'primitive', name: 'boolean'},
+                    required: true,
+                },
             ],
         });
     });
@@ -89,15 +109,18 @@ describe('parseComponentDeclaration', () => {
             sourceFilePath: expect.any(String),
             props: [
                 {
-                    name: 'variant', 
-                    type: {kind: 'oneOf', values: ['primary', 'secondary', 'danger']}, 
-                    required: true
+                    name: 'variant',
+                    type: {
+                        kind: 'oneOf',
+                        values: ['primary', 'secondary', 'danger'],
+                    },
+                    required: true,
                 },
                 {
-                    name: 'size', 
-                    type: {kind: 'oneOf', values: ['small', 'medium', 'large']}, 
-                    required: false
-                }
+                    name: 'size',
+                    type: {kind: 'oneOf', values: ['small', 'medium', 'large']},
+                    required: false,
+                },
             ],
         });
     });
@@ -129,12 +152,12 @@ describe('parseComponentDeclaration', () => {
                         kind: 'oneOfType',
                         types: expect.arrayContaining([
                             {kind: 'primitive', name: 'string'},
-                            {kind: 'primitive', name: 'number'}
-                        ])
+                            {kind: 'primitive', name: 'number'},
+                        ]),
                     }),
-                    required: true
-                })
-            ])
+                    required: true,
+                }),
+            ]),
         });
     });
 
@@ -168,9 +191,17 @@ describe('parseComponentDeclaration', () => {
             name: 'ArrowComponent',
             sourceFilePath: expect.any(String),
             props: [
-                {name: 'title', type: {kind: 'primitive', name: 'string'}, required: true},
-                {name: 'subtitle', type: {kind: 'primitive', name: 'string'}, required: false},
-                {name: 'items', type: {kind: 'array'}, required: true}
+                {
+                    name: 'title',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: true,
+                },
+                {
+                    name: 'subtitle',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: false,
+                },
+                {name: 'items', type: {kind: 'array'}, required: true},
             ],
         });
     });
@@ -196,8 +227,12 @@ describe('parseComponentDeclaration', () => {
             name: 'Button',
             sourceFilePath: expect.any(String),
             props: [
-                {name: 'label', type: {kind: 'primitive', name: 'string'}, required: true},
-                {name: 'onClick', type: {kind: 'function'}, required: true}
+                {
+                    name: 'label',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: true,
+                },
+                {name: 'onClick', type: {kind: 'function'}, required: true},
             ],
         });
     });
@@ -206,13 +241,13 @@ describe('parseComponentDeclaration', () => {
         const {variable, sourceFile} = createMockNonComponent(`
             export const NotAComponent = 42;
         `);
-        
+
         const result = parseComponentDeclaration(
             'NotAComponent',
             variable,
             sourceFile.getFilePath()
         );
-        
+
         expect(result).toBeNull();
     });
 });
