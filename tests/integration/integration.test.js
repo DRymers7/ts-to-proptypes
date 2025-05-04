@@ -660,5 +660,4 @@ describe('CLI Integration Tests', () => {
         expect(content).toContain('PropTypes.');
         console.log(`✓ Verified inline PropTypes for ${componentName}`);
     });
-
 });
