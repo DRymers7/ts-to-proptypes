@@ -189,6 +189,34 @@ export function MixedPropsComponent({
     );
 }`,
     },
+    {
+        name: 'UnionTypesComponent.tsx',
+        content: `
+import React from 'react';
+
+type Props = {
+    variant: 'primary' | 'secondary' | 'danger';
+    size?: 'small' | 'medium' | 'large';
+    value: string | number;
+    onClick: () => void;
+};
+
+export function UnionTypesComponent({ 
+    variant, 
+    size = 'medium',
+    value,
+    onClick
+}: Props) {
+    return (
+        <button 
+            className={\`btn btn-\${variant} btn-\${size}\`}
+            onClick={onClick}
+        >
+            {value}
+        </button>
+    );
+}`,   
+    }
 ];
 
 // PropType mapping for verification
@@ -200,6 +228,8 @@ const TYPE_MAPPING = {
     function: 'func',
     object: 'object',
     any: 'any',
+    oneOf: 'oneOf',
+    oneOfType: 'oneOfType'
 };
 
 async function readFile(filePath) {
@@ -336,32 +366,60 @@ async function verifyPropTypesOutput(
     expect(propTypesBlockMatch).not.toBeNull();
 
     const propTypesBlock = propTypesBlockMatch[1];
-    const actualProps = propTypesBlock
-        .trim()
-        .split('\n')
-        .map((line) => {
-            const match = line
-                .trim()
-                .match(/(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/);
-            if (!match) return null;
-            return {
+    
+    // Updated regex to also handle oneOf and oneOfType patterns
+    const actualProps = [];
+    const lines = propTypesBlock.trim().split('\n');
+    
+    for (const line of lines) {
+        const trimmedLine = line.trim();
+        if (!trimmedLine || trimmedLine === '') continue;
+        
+        // Try basic props (string, number, bool, etc.)
+        let match = trimmedLine.match(/(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/);
+        if (match) {
+            actualProps.push({
                 name: match[1],
                 type: match[2],
-                required: !!match[3],
-            };
-        })
-        .filter((p) => p !== null);
+                required: !!match[3]
+            });
+            continue;
+        }
+        
+        // Try oneOf
+        match = trimmedLine.match(/(\w+):\s*PropTypes\.oneOf\(\[(.*?)\]\)(\.isRequired)?/);
+        if (match) {
+            actualProps.push({
+                name: match[1],
+                type: 'oneOf',
+                values: match[2],  // Keep as string for simple verification
+                required: !!match[3]
+            });
+            continue;
+        }
+        
+        // Try oneOfType
+        match = trimmedLine.match(/(\w+):\s*PropTypes\.oneOfType\(\[(.*?)\]\)(\.isRequired)?/);
+        if (match) {
+            actualProps.push({
+                name: match[1],
+                type: 'oneOfType',
+                types: match[2],  // Keep as string for simple verification
+                required: !!match[3]
+            });
+            continue;
+        }
+    }
 
     console.log('Actual props:');
     console.table(actualProps);
 
-    // Relaxed verification that checks if all expected props exist
-    // but doesn't fail if the type is different - just logs warnings
+    // Verification logic
     let failures = [];
 
-    for (const {name, type, required} of expectedProps) {
-        const expectedType = TYPE_MAPPING[type] || 'any';
-        const actualProp = actualProps.find((p) => p.name === name);
+    for (const expectedProp of expectedProps) {
+        const { name, type, required } = expectedProp;
+        const actualProp = actualProps.find(p => p.name === name);
 
         if (!actualProp) {
             console.error(`\nMissing prop: ${name}`);
@@ -369,19 +427,35 @@ async function verifyPropTypesOutput(
             continue;
         }
 
-        // Check if type matches
-        if (actualProp.type !== expectedType) {
-            console.warn(`\nProp type mismatch for ${name}:`);
-            console.warn(
-                `  Expected: ${expectedType}${required ? ' (required)' : ' (optional)'}`
-            );
-            console.warn(
-                `  Actual  : ${actualProp.type}${actualProp.required ? ' (required)' : ' (optional)'}`
-            );
-            // Don't fail on type mismatch, just warn
+        // Special handling for union types
+        if (type.includes('|')) {
+            // For literal unions (oneOf)
+            if (type.match(/'[^']*'|"[^"]*"/)) {
+                if (actualProp.type !== 'oneOf') {
+                    console.warn(`\nExpected oneOf for ${name} but got ${actualProp.type}`);
+                }
+            } 
+            // For type unions (oneOfType)
+            else if (!['oneOf', 'oneOfType'].includes(actualProp.type)) {
+                console.warn(`\nExpected oneOf or oneOfType for ${name} but got ${actualProp.type}`);
+            }
+        }
+        // Check basic types
+        else {
+            const expectedType = TYPE_MAPPING[type] || 'any';
+            if (actualProp.type !== expectedType) {
+                console.warn(`\nProp type mismatch for ${name}:`);
+                console.warn(
+                    `  Expected: ${expectedType}${required ? ' (required)' : ' (optional)'}`
+                );
+                console.warn(
+                    `  Actual  : ${actualProp.type}${actualProp.required ? ' (required)' : ' (optional)'}`
+                );
+                // Don't fail on type mismatch, just warn
+            }
         }
 
-        // Check if required flag matches
+        // Check required flag
         if (actualProp.required !== required) {
             console.warn(`\nProp required flag mismatch for ${name}:`);
             console.warn(`  Expected: ${required ? 'required' : 'optional'}`);
@@ -392,28 +466,25 @@ async function verifyPropTypesOutput(
         }
     }
 
-    // Check if we have extra props not in the expected list
-    if (actualProps.length !== expectedProps.length) {
-        const actualNames = actualProps.map((p) => p.name);
-        const expectedNames = expectedProps.map((p) => p.name);
+    // Check for extra props
+    const actualNames = actualProps.map(p => p.name);
+    const expectedNames = expectedProps.map(p => p.name);
 
-        const extras = actualNames.filter(
-            (name) => !expectedNames.includes(name)
-        );
-        if (extras.length > 0) {
-            console.warn(`\nExtra props found: ${extras.join(', ')}`);
-        }
-
-        const missing = expectedNames.filter(
-            (name) => !actualNames.includes(name)
-        );
-        if (missing.length > 0) {
-            console.error(`\nMissing props: ${missing.join(', ')}`);
-            failures.push(`Missing props: ${missing.join(', ')}`);
-        }
+    const extras = actualNames.filter(
+        name => !expectedNames.includes(name)
+    );
+    if (extras.length > 0) {
+        console.warn(`\nExtra props found: ${extras.join(', ')}`);
     }
 
-    // Only fail if props are missing, not for type mismatches
+    const missing = expectedNames.filter(
+        name => !actualNames.includes(name)
+    );
+    if (missing.length > 0) {
+        console.error(`\nMissing props: ${missing.join(', ')}`);
+        failures.push(`Missing props: ${missing.join(', ')}`);
+    }
+
     if (failures.length > 0) {
         throw new Error(
             `PropTypes verification failed:\n${failures.join('\n')}`
