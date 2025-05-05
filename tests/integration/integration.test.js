@@ -8,26 +8,27 @@ const TEST_DIR = path.join(process.cwd(), 'tests/integration');
 const INPUT_DIR = path.join(TEST_DIR, 'fixtures');
 const OUTPUT_DIR = path.join(TEST_DIR, 'output');
 
-// Test component definitions
+// Test component definitions - keeping the existing ones
 const TEST_COMPONENTS = [
     {
         name: 'BasicComponent.tsx',
         content: `
-import React from 'react';
-
-type Props = {
-    name: string;
-    age: number;
-    isActive: boolean;
-};
-
-export function BasicComponent({ name, age, isActive }: Props) {
-    return (
-        <div>
-            {isActive ? \`\${name} (\${age})\` : 'Inactive user'}
-        </div>
-    );
-}`,
+    import React from 'react';
+    
+    type Props = {
+        name: string;
+        age: number;
+        isActive: boolean;
+    };
+    
+    export function BasicComponent({ name, age, isActive }: Props) {
+        return (
+            <div>
+                {isActive ? \`\${name} (\${age})\` : 'Inactive user'}
+            </div>
+        );
+    }
+    `, // <-- ✅ Properly closed multiline string
     },
     {
         name: 'OptionalPropsComponent.tsx',
@@ -217,9 +218,67 @@ export function UnionTypesComponent({
     );
 }`,
     },
+    // Adding new test cases for better coverage
+    {
+        name: 'LiteralUnionsComponent.tsx',
+        content: `
+import React from 'react';
+
+type Props = {
+    // String literals
+    color: 'red' | 'green' | 'blue';
+    // Number literals
+    level: 1 | 2 | 3;
+    // Boolean literals 
+    active: true | false;
+    // Mixed literals
+    value: 0 | 'none' | true;
+};
+
+export function LiteralUnionsComponent({ color, level, active, value }: Props) {
+    return (
+        <div style={{ color }}>
+            {active ? \`Level \${level}: \${value}\` : 'Inactive'}
+        </div>
+    );
+}`,
+    },
+    {
+        name: 'NestedUnionsComponent.tsx',
+        content: `
+import React from 'react';
+
+type Props = {
+    // Complex nested union type
+    content: string | { text: string; format?: 'bold' | 'italic' } | React.ReactNode;
+    
+    // Union with function type
+    handler: ((value: string) => void) | string;
+    
+    // Required and optional combined with unions
+    data: string[] | Record<string, any>;
+    fallback?: string | (() => React.ReactNode);
+};
+
+export function NestedUnionsComponent({ content, handler, data, fallback }: Props) {
+    return <div>{typeof content === 'string' ? content : 'Complex content'}</div>;
+}`,
+    },
+    {
+        name: 'EmptyPropsComponent.tsx',
+        content: `
+import React from 'react';
+
+// Empty props type - edge case test
+type Props = {};
+
+export function EmptyPropsComponent({}: Props) {
+    return <div>Component with no props</div>;
+}`,
+    }
 ];
 
-// PropType mapping for verification
+// Strict mapping of TypeScript types to PropTypes
 const TYPE_MAPPING = {
     string: 'string',
     number: 'number',
@@ -229,7 +288,7 @@ const TYPE_MAPPING = {
     object: 'object',
     any: 'any',
     oneOf: 'oneOf',
-    oneOfType: 'oneOfType',
+    oneOfType: 'oneOfType'
 };
 
 async function readFile(filePath) {
@@ -252,6 +311,9 @@ async function writeFile(filePath, content) {
     }
 }
 
+/**
+ * Enhanced function to extract expected props from a component file
+ */
 async function extractExpectedProps(filePath) {
     const content = await readFile(filePath);
     if (!content) return [];
@@ -264,74 +326,30 @@ async function extractExpectedProps(filePath) {
 
     const propsBlock = typeMatch[1];
 
-    // Match each prop declaration, handling comments
+    // Filter out comments and empty lines
     const propLines = propsBlock
         .split('\n')
-        .filter(
-            (line) => !line.trim().startsWith('//') && line.trim().length > 0
-        )
+        .filter(line => !line.trim().startsWith('//') && line.trim().length > 0)
         .join('\n');
 
-    // Improved regex to handle more complex type declarations
+    // Enhanced regex to handle more complex type declarations
     const propRegex = /(\w+)(\??):\s*([^;]+);/g;
     let match;
 
     while ((match = propRegex.exec(propLines)) !== null) {
         const name = match[1];
         const isOptional = match[2] === '?';
-        let type = match[3].trim();
+        const typeStr = match[3].trim();
 
-        // Handle array types (including Array<T> and T[])
-        if (type.endsWith('[]') || type.startsWith('Array<')) {
-            type = 'array';
-        }
-        // Handle function types (including arrow functions and method signatures)
-        else if (
-            type.includes('=>') ||
-            type.includes('function') ||
-            /\([^)]*\)/.test(type)
-        ) {
-            type = 'function';
-        }
-        // Handle object types (including interfaces, Record types, and inline object types)
-        else if (
-            type.startsWith('{') ||
-            type.startsWith('Record<') ||
-            type.includes('CSSProperties')
-        ) {
-            type = 'object';
-        }
-        // Handle primitive types - improved boolean detection
-        else if (type === 'boolean' || type === 'Boolean') {
-            type = 'boolean';
-        } else if (type === 'string' || type === 'String') {
-            type = 'string';
-        } else if (type === 'number' || type === 'Number') {
-            type = 'number';
-        }
-        // For union types, extract the base type if it's a primitive
-        else if (type.includes('|')) {
-            const unionTypes = type.split('|').map((t) => t.trim());
-            // Check if any of the union types is a primitive
-            for (const unionType of unionTypes) {
-                if (['string', 'number', 'boolean'].includes(unionType)) {
-                    type = unionType;
-                    break;
-                }
-            }
-            // If no primitive found, default to the first type or 'any'
-            if (!['string', 'number', 'boolean'].includes(type)) {
-                type = 'any';
-            }
-        }
-        // Default to any
-        else {
-            type = 'any';
-        }
+        // Determine the type using improved detection
+        let propTypeInfo = detectPropTypeInfo(typeStr);
 
         props.push({
             name,
-            type,
+            type: propTypeInfo.type,
+            // For oneOf/oneOfType, store additional info to verify values/types
+            ...(propTypeInfo.values && { values: propTypeInfo.values }),
+            ...(propTypeInfo.types && { types: propTypeInfo.types }),
             required: !isOptional,
         });
     }
@@ -339,35 +357,136 @@ async function extractExpectedProps(filePath) {
     return props;
 }
 
-async function verifyPropTypesOutput(
-    componentName,
-    expectedProps,
-    outputFilePath
-) {
-    const content = await readFile(outputFilePath);
+/**
+ * Enhanced type detection that extracts more detailed information
+ */
+function detectPropTypeInfo(typeStr) {
+    // Handle array types
+    if (typeStr.endsWith('[]') || typeStr.startsWith('Array<')) {
+        return { type: 'array' };
+    }
 
-    expect(content).not.toBeNull();
+    // Handle function types
+    if (typeStr.includes('=>') || typeStr.includes('function') || /\([^)]*\)/.test(typeStr)) {
+        return { type: 'function' };
+    }
 
-    // Verify imports
-    expect(content).toContain('import PropTypes from');
+    // Handle object types
+    if (typeStr.startsWith('{') || typeStr.startsWith('Record<') || 
+        typeStr.includes('CSSProperties') || typeStr.includes('ReactNode')) {
+        return { type: 'object' };
+    }
 
-    // Verify PropTypes block exists
-    expect(content).toContain(`${componentName}.propTypes = {`);
+    // Handle primitive types
+    if (typeStr === 'boolean' || typeStr === 'Boolean') {
+        return { type: 'boolean' };
+    }
+    if (typeStr === 'string' || typeStr === 'String') {
+        return { type: 'string' };
+    }
+    if (typeStr === 'number' || typeStr === 'Number') {
+        return { type: 'number' };
+    }
 
-    // Log expected vs actual for debugging
-    console.log(`\nComponent: ${componentName}`);
-    console.log('Expected props:');
-    console.table(expectedProps);
+    // Handle union types with improved detection
+    if (typeStr.includes('|')) {
+        // Split union by pipe, but respect quotes and nested structures
+        const unionParts = parseUnionParts(typeStr);
+        
+        // Check if it's a literal union (oneOf)
+        const isLiteralUnion = unionParts.every(part => {
+            // Check for string literals
+            if (part.startsWith("'") || part.startsWith('"')) return true;
+            // Check for boolean literals
+            if (part === 'true' || part === 'false') return true;
+            // Check for number literals
+            return !isNaN(Number(part)) && part.trim() !== '';
+        });
 
-    // Extract actual props from the generated file
-    const propTypesBlockMatch = content.match(
-        new RegExp(`${componentName}\\.propTypes = \\{([\\s\\S]*?)\\};`)
-    );
-    expect(propTypesBlockMatch).not.toBeNull();
+        if (isLiteralUnion) {
+            // Extract actual values for oneOf validation
+            const values = unionParts.map(part => {
+                // Handle string literals
+                if (part.startsWith("'") || part.startsWith('"')) {
+                    return part.substring(1, part.length - 1);
+                }
+                // Handle boolean literals
+                if (part === 'true') return true;
+                if (part === 'false') return false;
+                // Handle number literals
+                return Number(part);
+            });
 
-    const propTypesBlock = propTypesBlockMatch[1];
+            return { 
+                type: 'oneOf',
+                values: values 
+            };
+        }
 
-    // Updated regex to also handle oneOf and oneOfType patterns
+        // If not a literal union, it's a type union (oneOfType)
+        const types = unionParts.map(part => detectPropTypeInfo(part).type);
+        return { 
+            type: 'oneOfType',
+            types: types 
+        };
+    }
+
+    // Default to any for unrecognized types
+    return { type: 'any' };
+}
+
+/**
+ * Helper to parse union type parts, respecting quotes and nested structures
+ */
+function parseUnionParts(unionTypeStr) {
+    const parts = [];
+    let currentPart = '';
+    let nestLevel = 0;
+    let inQuote = null; // null, ', or "
+    
+    for (let i = 0; i < unionTypeStr.length; i++) {
+        const char = unionTypeStr[i];
+        
+        // Handle quotes
+        if ((char === "'" || char === '"') && unionTypeStr[i-1] !== '\\') {
+            if (inQuote === char) {
+                inQuote = null;
+            } else if (inQuote === null) {
+                inQuote = char;
+            }
+        }
+        
+        // Handle nesting
+        if (inQuote === null) {
+            if (char === '{' || char === '(' || char === '<') {
+                nestLevel++;
+            } else if (char === '}' || char === ')' || char === '>') {
+                nestLevel--;
+            }
+        }
+        
+        // Handle pipe separator
+        if (char === '|' && nestLevel === 0 && inQuote === null) {
+            parts.push(currentPart.trim());
+            currentPart = '';
+            continue;
+        }
+        
+        currentPart += char;
+    }
+    
+    // Add the last part
+    if (currentPart.trim()) {
+        parts.push(currentPart.trim());
+    }
+    
+    return parts;
+}
+
+/**
+ * Extract actual props from the generated PropTypes file
+ */
+function extractActualProps(propTypesBlock) {
     const actualProps = [];
     const lines = propTypesBlock.trim().split('\n');
 
@@ -375,10 +494,8 @@ async function verifyPropTypesOutput(
         const trimmedLine = line.trim();
         if (!trimmedLine || trimmedLine === '') continue;
 
-        // Try basic props (string, number, bool, etc.)
-        let match = trimmedLine.match(
-            /(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/
-        );
+        // Basic props (string, number, bool, etc.)
+        let match = trimmedLine.match(/(\w+):\s*PropTypes\.(\w+)(\.isRequired)?/);
         if (match) {
             actualProps.push({
                 name: match[1],
@@ -388,116 +505,239 @@ async function verifyPropTypesOutput(
             continue;
         }
 
-        // Try oneOf
-        match = trimmedLine.match(
-            /(\w+):\s*PropTypes\.oneOf\(\[(.*?)\]\)(\.isRequired)?/
-        );
+        // oneOf props
+        match = trimmedLine.match(/(\w+):\s*PropTypes\.oneOf\(\[(.*?)\]\)(\.isRequired)?/);
         if (match) {
+            // Parse the values inside oneOf
+            const valuesStr = match[2];
+            let values;
+
+            try {
+                // Convert to actual JS values to compare with expected
+                values = parseOneOfValues(valuesStr);
+            } catch (e) {
+                values = valuesStr; // Fallback to string if parsing fails
+            }
+
             actualProps.push({
                 name: match[1],
                 type: 'oneOf',
-                values: match[2], // Keep as string for simple verification
+                values: values,
                 required: !!match[3],
             });
             continue;
         }
 
-        // Try oneOfType
-        match = trimmedLine.match(
-            /(\w+):\s*PropTypes\.oneOfType\(\[(.*?)\]\)(\.isRequired)?/
-        );
+        // oneOfType props
+        match = trimmedLine.match(/(\w+):\s*PropTypes\.oneOfType\(\[(.*?)\]\)(\.isRequired)?/);
         if (match) {
+            // Extract the types inside oneOfType
+            const typesStr = match[2];
+            const types = extractOneOfTypeTypes(typesStr);
+
             actualProps.push({
                 name: match[1],
                 type: 'oneOfType',
-                types: match[2], // Keep as string for simple verification
+                types: types,
                 required: !!match[3],
             });
             continue;
         }
     }
 
+    return actualProps;
+}
+
+/**
+ * Parse oneOf values from string representation
+ */
+function parseOneOfValues(valuesStr) {
+    const valuesList = [];
+    let parts = valuesStr.split(',').map(part => part.trim());
+
+    for (const part of parts) {
+        if (part.startsWith("'") || part.startsWith('"')) {
+            // String literal
+            valuesList.push(part.substring(1, part.length - 1));
+        } else if (part === 'true') {
+            valuesList.push(true);
+        } else if (part === 'false') {
+            valuesList.push(false);
+        } else if (!isNaN(Number(part))) {
+            valuesList.push(Number(part));
+        } else {
+            valuesList.push(part); // Keep as is if we can't parse
+        }
+    }
+
+    return valuesList;
+}
+
+/**
+ * Extract types from oneOfType declaration
+ */
+function extractOneOfTypeTypes(typesStr) {
+    const types = [];
+    
+    // Match all PropTypes.X occurrences
+    const regex = /PropTypes\.(\w+)/g;
+    let match;
+    
+    while ((match = regex.exec(typesStr)) !== null) {
+        types.push(match[1]);
+    }
+    
+    return types;
+}
+
+/**
+ * Improved verification function that fails on type mismatches
+ */
+async function verifyPropTypesOutput(componentName, expectedProps, outputFilePath) {
+    const content = await readFile(outputFilePath);
+    expect(content).not.toBeNull();
+
+    // Verify imports
+    expect(content).toContain('import PropTypes from');
+
+    // Verify PropTypes block exists
+    const propTypesPattern = `${componentName}\\.propTypes = \\{`;
+    expect(content).toMatch(new RegExp(propTypesPattern));
+
+    // Extract actual props from the generated file
+    const propTypesBlockMatch = content.match(
+        new RegExp(`${componentName}\\.propTypes = \\{([\\s\\S]*?)\\};`)
+    );
+    
+    if (!propTypesBlockMatch) {
+        throw new Error(`PropTypes block not found for ${componentName}`);
+    }
+
+    const propTypesBlock = propTypesBlockMatch[1];
+    const actualProps = extractActualProps(propTypesBlock);
+
+    // Log expected vs actual for debugging
+    console.log(`\nComponent: ${componentName}`);
+    console.log('Expected props:');
+    console.table(expectedProps);
     console.log('Actual props:');
     console.table(actualProps);
 
-    // Verification logic
-    let failures = [];
+    // Verify each prop with strict validation
+    const failures = [];
 
+    // Check for missing or extra props
+    const actualNames = actualProps.map(p => p.name);
+    const expectedNames = expectedProps.map(p => p.name);
+    
+    const missing = expectedNames.filter(name => !actualNames.includes(name));
+    if (missing.length > 0) {
+        failures.push(`Missing props: ${missing.join(', ')}`);
+    }
+    
+    const extras = actualNames.filter(name => !expectedNames.includes(name));
+    if (extras.length > 0) {
+        failures.push(`Extra props found: ${extras.join(', ')}`);
+    }
+
+    // Verify each expected prop in detail
     for (const expectedProp of expectedProps) {
-        const {name, type, required} = expectedProp;
-        const actualProp = actualProps.find((p) => p.name === name);
-
+        const actualProp = actualProps.find(p => p.name === expectedProp.name);
+        
         if (!actualProp) {
-            console.error(`\nMissing prop: ${name}`);
-            failures.push(`Missing prop: ${name}`);
+            // Already caught in the missing check
             continue;
         }
 
-        // Special handling for union types
-        if (type.includes('|')) {
-            // For literal unions (oneOf)
-            if (type.match(/'[^']*'|"[^"]*"/)) {
-                if (actualProp.type !== 'oneOf') {
-                    console.warn(
-                        `\nExpected oneOf for ${name} but got ${actualProp.type}`
-                    );
+        // Verify the prop type
+        // Convert type name if needed (e.g., 'boolean' -> 'bool')
+        const expectedTypeName = mapTypeToExpectedPropType(expectedProp.type);
+        
+        if (actualProp.type !== expectedTypeName) {
+            failures.push(`Type mismatch for '${expectedProp.name}': expected '${expectedTypeName}', got '${actualProp.type}'`);
+        }
+
+        // Verify required flag - MUST match exactly
+        if (actualProp.required !== expectedProp.required) {
+            const expectedStr = expectedProp.required ? 'required' : 'optional';
+            const actualStr = actualProp.required ? 'required' : 'optional';
+            failures.push(`Required flag mismatch for '${expectedProp.name}': expected ${expectedStr}, got ${actualStr}`);
+        }
+
+        // Additional verification for oneOf values if available
+        if (expectedProp.type === 'oneOf' && expectedProp.values && actualProp.values) {
+            const expectedValues = new Set(expectedProp.values);
+            const actualValues = new Set(actualProp.values);
+            
+            // Check if the sets have the same size
+            if (expectedValues.size !== actualValues.size) {
+                failures.push(`Value count mismatch for oneOf prop '${expectedProp.name}': expected ${expectedValues.size} values, got ${actualValues.size}`);
+            }
+            
+            // Check if all expected values are in the actual values
+            for (const val of expectedValues) {
+                let found = false;
+                for (const actVal of actualValues) {
+                    if (val === actVal) {
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    failures.push(`Missing value in oneOf prop '${expectedProp.name}': ${val}`);
                 }
             }
-            // For type unions (oneOfType)
-            else if (!['oneOf', 'oneOfType'].includes(actualProp.type)) {
-                console.warn(
-                    `\nExpected oneOf or oneOfType for ${name} but got ${actualProp.type}`
-                );
+        }
+
+        // Additional verification for oneOfType types if available
+        if (expectedProp.type === 'oneOfType' && expectedProp.types && actualProp.types) {
+            // Convert expected types to PropTypes names
+            const expectedTypeNames = expectedProp.types.map(mapTypeToExpectedPropType);
+            
+            // Check if all expected types are in the actual types
+            for (const expectedType of expectedTypeNames) {
+                if (!actualProp.types.includes(expectedType)) {
+                    failures.push(`Missing type in oneOfType prop '${expectedProp.name}': expected to include '${expectedType}'`);
+                }
+            }
+            
+            // Check if any unexpected types are in the actual types
+            for (const actualType of actualProp.types) {
+                if (!expectedTypeNames.includes(actualType)) {
+                    failures.push(`Unexpected type in oneOfType prop '${expectedProp.name}': '${actualType}'`);
+                }
             }
         }
-        // Check basic types
-        else {
-            const expectedType = TYPE_MAPPING[type] || 'any';
-            if (actualProp.type !== expectedType) {
-                console.warn(`\nProp type mismatch for ${name}:`);
-                console.warn(
-                    `  Expected: ${expectedType}${required ? ' (required)' : ' (optional)'}`
-                );
-                console.warn(
-                    `  Actual  : ${actualProp.type}${actualProp.required ? ' (required)' : ' (optional)'}`
-                );
-                // Don't fail on type mismatch, just warn
-            }
-        }
-
-        // Check required flag
-        if (actualProp.required !== required) {
-            console.warn(`\nProp required flag mismatch for ${name}:`);
-            console.warn(`  Expected: ${required ? 'required' : 'optional'}`);
-            console.warn(
-                `  Actual  : ${actualProp.required ? 'required' : 'optional'}`
-            );
-            // Don't fail on required flag mismatch, just warn
-        }
     }
 
-    // Check for extra props
-    const actualNames = actualProps.map((p) => p.name);
-    const expectedNames = expectedProps.map((p) => p.name);
-
-    const extras = actualNames.filter((name) => !expectedNames.includes(name));
-    if (extras.length > 0) {
-        console.warn(`\nExtra props found: ${extras.join(', ')}`);
-    }
-
-    const missing = expectedNames.filter((name) => !actualNames.includes(name));
-    if (missing.length > 0) {
-        console.error(`\nMissing props: ${missing.join(', ')}`);
-        failures.push(`Missing props: ${missing.join(', ')}`);
-    }
-
+    // If any failures, throw an error with the details
     if (failures.length > 0) {
-        throw new Error(
-            `PropTypes verification failed:\n${failures.join('\n')}`
-        );
+        console.error(`\nPropTypes verification failed for ${componentName}:`);
+        failures.forEach(failure => console.error(`  - ${failure}`));
+        
+        throw new Error(`PropTypes verification failed for ${componentName}:\n${failures.join('\n')}`);
     }
 
     return true;
+}
+
+/**
+ * Map type from our expected props format to PropTypes format
+ */
+function mapTypeToExpectedPropType(type) {
+    // Direct mapping for simple types
+    switch (type) {
+        case 'string': return 'string';
+        case 'number': return 'number';
+        case 'boolean': return 'bool';
+        case 'array': return 'array';
+        case 'function': return 'func';
+        case 'object': return 'object';
+        case 'oneOf': return 'oneOf';
+        case 'oneOfType': return 'oneOfType';
+        default: return 'any';
+    }
 }
 
 // Helper to extract component name from file path
@@ -572,9 +812,7 @@ describe('CLI Integration Tests', () => {
 
             const result = runCLI(`-s "${inputGlob}" -o "${outputPath}"`);
             if (result === null) {
-                console.warn(
-                    '⚠️ CLI execution failed, but continuing with verification of any generated files'
-                );
+                throw new Error('CLI execution failed');
             }
 
             // Verify each generated file
@@ -591,7 +829,7 @@ describe('CLI Integration Tests', () => {
                     await fs.access(outputFile);
                 } catch (error) {
                     console.warn(
-                        `⚠️ Output file not found for ${componentName}, skipping verification`
+                        `Output file not found for ${componentName}, skipping verification`
                     );
                     continue;
                 }
@@ -612,10 +850,11 @@ describe('CLI Integration Tests', () => {
                     console.error(
                         `✗ Verification failed for ${componentName}: ${err.message}`
                     );
+                    throw err; // Re-throw to fail the test
                 }
             }
 
-            // At least some files should be verified
+            // Test passes only if we verified at least some components
             expect(verifiedCount).toBeGreaterThan(0);
             console.log(
                 `Successfully verified ${verifiedCount}/${inputFiles.length} components`
@@ -646,10 +885,7 @@ describe('CLI Integration Tests', () => {
         const result = runCLI(`-s "${destPath}" --inline`);
 
         if (result === null) {
-            console.warn(
-                '⚠️ CLI execution failed, skipping inline test verification'
-            );
-            return;
+            throw new Error('CLI execution failed for inline test');
         }
 
         // Verify inline insertion
@@ -658,6 +894,18 @@ describe('CLI Integration Tests', () => {
 
         expect(content).toContain(`${componentName}.propTypes = {`);
         expect(content).toContain('PropTypes.');
-        console.log(`✓ Verified inline PropTypes for ${componentName}`);
+
+        // Extract expected props
+        const expectedProps = await extractExpectedProps(srcPath);
+        
+        // Verify the inserted PropTypes using our enhanced verification
+        try {
+            // For inline mode, the source file becomes the output file
+            await verifyPropTypesOutput(componentName, expectedProps, destPath);
+            console.log(`✓ Verified inline PropTypes for ${componentName}`);
+        } catch (err) {
+            console.error(`✗ Verification failed for inline mode: ${err.message}`);
+            throw err; // Re-throw to fail the test
+        }
     });
 });
