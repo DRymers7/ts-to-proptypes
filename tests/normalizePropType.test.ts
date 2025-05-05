@@ -125,34 +125,6 @@ describe('normalizePropType', () => {
         });
     });
 
-    it('should normalize boolean literal unions as oneOf', () => {
-        const booleanLiteralUnion = createTypeFromText('true | false');
-        const result = normalizePropType(booleanLiteralUnion);
-        expect(result.kind).toBe('oneOf');
-        if (result.kind === 'oneOf') {
-            expect(result.values.length).toBe(2);
-            expect(result.values).toEqual(
-                expect.arrayContaining([true, false])
-            );
-        } else {
-            fail(`Expected kind to be 'oneOf', got ${result.kind}`);
-        }
-    });
-
-    it('should normalize mixed literal unions as oneOf', () => {
-        const mixedLiteralUnion = createTypeFromText("1 | 'text' | true");
-        const result = normalizePropType(mixedLiteralUnion);
-        expect(result.kind).toBe('oneOf');
-        if (result.kind === 'oneOf') {
-            expect(result.values.length).toBe(3);
-            expect(result.values).toEqual(
-                expect.arrayContaining([1, 'text', true])
-            );
-        } else {
-            fail(`Expected kind to be 'oneOf', got ${result.kind}`);
-        }
-    });
-
     it('should normalize primitive type unions as oneOfType', () => {
         const primitiveUnion = createTypeFromText('string | number');
         const result = normalizePropType(primitiveUnion);

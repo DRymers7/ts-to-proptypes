@@ -33,6 +33,8 @@ function extractPropsFromParameter(param: ParameterDeclaration): ParsedProp[] {
             const isRequired =
                 !propSymbol.hasFlags(SymbolFlags.Optional) && parentRequired;
 
+            // For optional properties, we want to just set the required flag to false
+            // but still use the correct type (not the union with undefined)
             return {
                 name,
                 type: normalizePropType(rawType),
