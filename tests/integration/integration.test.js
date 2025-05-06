@@ -1090,6 +1090,8 @@ describe('CLI Integration Tests', () => {
             );
             console.log(`Running CLI: -s "${inputGlob}" -o "${outputPath}"`);
 
+            const originalDir = process.cwd();
+            process.chdir(TEST_DIR); // Change working directory to test directory
             const result = runCLI(`-s "${inputGlob}" -o "${outputPath}"`);
             if (result === null) {
                 throw new Error('CLI execution failed');

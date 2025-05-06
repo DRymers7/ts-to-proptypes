@@ -93,22 +93,35 @@ function filterSourceFiles(
     packageDir: string,
     sourceGlob: string
 ): SourceFile[] {
-    // Create a normalized version of the glob pattern for comparison
-    const normalizedGlob = sourceGlob.replace(/\*/g, '');
-
+    // Convert glob pattern to a regex-safe string (escape special chars)
+    const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    
+    // Get the base directory of the source glob (everything before the first wildcard)
+    const globBasePath = sourceGlob.split('*')[0];
+    const absoluteGlobBasePath = path.resolve(globBasePath);
+    
+    console.log(`Source glob base path: ${absoluteGlobBasePath}`);
+    
     return sourceFiles.filter((file) => {
         const filePath = file.getFilePath();
-
-        // Skip internal library files unless explicitly targeted
-        const isInternalFile =
-            filePath.startsWith(`${packageDir}/src/`) &&
-            !filePath.includes(normalizedGlob);
-
-        if (isInternalFile) {
-            console.log(`Skipping internal file: ${filePath}`);
+        
+        // Only include files that are within the glob base directory
+        const shouldInclude = filePath.startsWith(absoluteGlobBasePath);
+        
+        // Exclude any files from src/ directory unless explicitly targeted
+        const isSrcFile = filePath.includes(`${path.sep}src${path.sep}`) && 
+                          !filePath.includes(absoluteGlobBasePath);
+        
+        if (isSrcFile) {
+            console.log(`Excluding source file: ${filePath}`);
             return false;
         }
-
+        
+        if (!shouldInclude) {
+            console.log(`File outside target directory: ${filePath}`);
+            return false;
+        }
+        
         return true;
     });
 }
