@@ -252,6 +252,10 @@ async function main(): Promise<void> {
         // Save any changes to project files
         await project.save();
 
+        if (options.inline) {
+            await project.save();
+        }
+
         console.log('');
         console.log('Summary:');
         console.log(`Processed ${sourceFiles.length} files`);
