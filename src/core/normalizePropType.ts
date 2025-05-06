@@ -1,5 +1,5 @@
 import {Type} from 'ts-morph';
-import {NormalizedPropType} from './types';
+import {NormalizedPropType} from '../types/types';
 
 /**
  * Type guard to check if a union type contains an undefined type

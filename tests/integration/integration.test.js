@@ -190,35 +190,6 @@ export function MixedPropsComponent({
     );
 }`,
     },
-//     {
-//         name: 'UnionTypesComponent.tsx',
-//         content: `
-// import React from 'react';
-    
-// type Props = {
-//     variant: 'primary' | 'secondary' | 'danger';
-//     size?: 'small' | 'medium' | 'large';
-//     value: string | number;
-//     onClick: () => void;
-// };
-
-// export function UnionTypesComponent({ 
-//     variant, 
-//     size = 'medium',
-//     value,
-//     onClick
-// }: Props) {
-//     return (
-//         <button 
-//             className={\`btn btn-\${variant} btn-\${size}\`}
-//             onClick={onClick}
-//         >
-//             {value}
-//         </button>
-//     );
-// }`,
-//     },
-    // Adding new test cases for better coverage
     {
         name: 'LiteralUnionsComponent.tsx',
         content: `

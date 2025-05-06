@@ -1,5 +1,5 @@
 import {describe, it, expect} from 'vitest';
-import extractPropsFromParameter from '../src/extractPropsFromParameter';
+import extractPropsFromParameter from '../../src/core/extractPropsFromParameter';
 import {Project} from 'ts-morph';
 
 describe('extractPropsFromParameter', () => {
@@ -224,7 +224,7 @@ describe('extractPropsFromParameter', () => {
                 `Expected contentProp kind to be 'oneOfType', got ${contentProp?.type.kind}`
             );
         }
-    }); // ← Closed the oneOfType test here
+    });
 
     it('should handle complex nested props correctly', () => {
         const param = createParamDeclaration(`

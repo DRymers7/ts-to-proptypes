@@ -1,4 +1,4 @@
-import {ComponentInfo} from './interfaces/ComponentInfo';
+import {ComponentInfo} from './parser';
 import {
     Node,
     ParameterDeclaration,

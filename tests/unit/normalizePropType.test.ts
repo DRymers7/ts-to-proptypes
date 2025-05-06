@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
-import {normalizePropType} from '../src/normalizePropType';
+import {normalizePropType} from '../../src/core/normalizePropType';
 import {Project, Type} from 'ts-morph';
-import {NormalizedPropType} from '../src/types';
+import {NormalizedPropType} from '../../src/types/types';
 import {fail} from 'assert';
 
 const createTypeFromText = (typeText: string) => {

@@ -1,8 +1,8 @@
 import {describe, it, expect} from 'vitest';
 import {Project} from 'ts-morph';
-import {createSourceFile} from '../src/writer';
-import {ComponentInfo} from '../src/interfaces/ComponentInfo';
-import {WriteOptions} from '../src/types';
+import {createSourceFile} from '../../src/core/writer';
+import {ComponentInfo} from '../../src/core/parser';
+import {WriteOptions} from '../../src/types/types';
 
 /**
  * Test suite for file writing logic. If working as intended, this module

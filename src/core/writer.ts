@@ -1,11 +1,22 @@
 import {CodeBlockWriter, Project} from 'ts-morph';
 import generateComponentString from './generator';
-import {ComponentInfo} from './interfaces/ComponentInfo';
-import {WriteOptions} from './types';
-import {formatSingleFile} from './formatter';
+import {ComponentInfo} from './parser';
+import {WriteOptions} from '../types/types';
+import {formatSingleFile} from '../utils/formatter';
 import path from 'path';
 import {SourceFile} from 'ts-morph';
-import {FileCreationResult} from './interfaces/FileCreationResult';
+
+/**
+ * Result of the file creation operation
+ */
+interface FileCreationResult {
+    /** Whether the operation was successful */
+    success: boolean;
+    /** Path to the created or modified file */
+    filePath: string;
+    /** Error message if any */
+    error?: string;
+}
 
 /**
  * Determines the output file path based on component info and options

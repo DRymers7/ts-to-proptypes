@@ -117,10 +117,3 @@ export interface WriteOptions {
      */
     prettier?: boolean;
 }
-
-/**
- * @deprecated Use PROP_TYPE_VALIDATORS instead
- * Legacy mapping of TypeScript types to PropTypes strings.
- * Kept for backward compatibility.
- */
-export const typeMap: Record<string, string> = PROP_TYPE_VALIDATORS;

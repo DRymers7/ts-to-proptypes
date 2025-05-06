@@ -183,14 +183,35 @@ TypeScript types are mapped to PropTypes as follows:
 
 Optional props (marked with `?`) don't include the `.isRequired` validator.
 
+## Supported TypeScript Types
+
+| TypeScript Type       | PropTypes Output                                            | Notes                  |
+| --------------------- | ----------------------------------------------------------- | ---------------------- |
+| `string`              | `PropTypes.string`                                          |                        |
+| `number`              | `PropTypes.number`                                          |                        |
+| `boolean`             | `PropTypes.bool`                                            |                        |
+| `any`                 | `PropTypes.any`                                             |                        |
+| `unknown`             | `PropTypes.any`                                             |                        |
+| `object`              | `PropTypes.object`                                          | Generic object type    |
+| `Record<K, V>`        | `PropTypes.object`                                          |                        |
+| `Array<T>`            | `PropTypes.array`                                           |                        |
+| `T[]`                 | `PropTypes.array`                                           |                        |
+| `Function`            | `PropTypes.func`                                            |                        |
+| `() => void`          | `PropTypes.func`                                            | Any function signature |
+| `'a' \| 'b' \| 'c'`   | `PropTypes.oneOf(['a', 'b', 'c'])`                          | String literal unions  |
+| `1 \| 2 \| 3`         | `PropTypes.oneOf([1, 2, 3])`                                | Number literal unions  |
+| `string \| number`    | `PropTypes.oneOfType([PropTypes.string, PropTypes.number])` | Type unions            |
+| `string \| undefined` | `PropTypes.string`                                          | Optional types         |
+| `string?`             | `PropTypes.string`                                          | Optional properties    |
+
 ## Limitations
 
 While `ts-to-proptypes` handles many common cases, there are some limitations:
 
-- Complex union and intersection types are simplified to their base type or `any`
-- Generic components may have limited type inference
-- Custom type validators require manual addition
-- Enum types are converted to their base type (string, number)
+- Generic type parameters are treated as `any`
+- Intersection types (`A & B`) are simplified to their base type
+- Complex mapped types may not be correctly interpreted
+- Recursive types are not fully supported
 
 ## Contributing
 

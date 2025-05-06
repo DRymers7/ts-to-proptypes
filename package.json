@@ -1,27 +1,63 @@
 {
     "name": "ts-to-proptypes",
     "version": "1.0.0",
-    "main": "index.js",
+    "description": "Generate React PropTypes declarations automatically from TypeScript interfaces and types.",
+    "main": "dist/index.js",
+    "module": "dist/index.esm.js",
+    "types": "dist/index.d.ts",
+    "bin": {
+        "ts-to-proptypes": "dist/bin/cli.js"
+    },
+    "files": [
+        "dist",
+        "LICENSE",
+        "README.md"
+    ],
     "scripts": {
-        "dev": "tsx bin/cli.ts",
-        "build": "tsc",
+        "dev": "tsx src/cli/cli.ts",
+        "build": "rollup -c",
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:watch": "vitest --watch",
         "test:integration": "vitest run tests/integration/integration.test.js",
-        "format": "prettier . --write"
+        "format": "prettier . --write",
+        "lint": "eslint . --ext .ts,.tsx",
+        "prepublishOnly": "npm run build"
     },
-    "keywords": [],
-    "author": "",
-    "license": "ISC",
-    "description": "",
+    "engines": {
+        "node": ">=14.0.0"
+    },
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/DRymers7/ts-to-proptypes.git"
+    },
+    "bugs": {
+        "url": "https://github.com/DRymers7/ts-to-proptypes/issues"
+    },
+    "homepage": "https://github.com/DRymers7/ts-to-proptypes#readme",
+    "keywords": [
+        "react",
+        "typescript",
+        "proptypes",
+        "generator",
+        "static-analysis",
+        "types",
+        "validation"
+    ],
+    "author": "Derek Rymers",
+    "license": "MIT",
     "devDependencies": {
+        "@rollup/plugin-commonjs": "^28.0.3",
+        "@rollup/plugin-node-resolve": "^16.0.1",
+        "@rollup/plugin-typescript": "^12.1.2",
         "@types/commander": "^2.12.5",
         "@types/node": "^22.15.3",
         "@types/prettier": "^3.0.0",
         "@types/react": "^19.1.2",
         "@vitest/ui": "^3.1.2",
         "react": "^19.1.0",
+        "rollup": "^4.40.2",
+        "rollup-plugin-dts": "^6.2.1",
         "ts-morph": "^25.0.1",
         "tsx": "^4.19.3",
         "typescript": "^5.8.3",

@@ -2,10 +2,10 @@
 import {Project, SourceFile} from 'ts-morph';
 import {Command} from 'commander';
 import path from 'path';
-import {parseComponents} from '../src/parser';
-import {createSourceFile} from '../src/writer';
-import {ComponentInfo} from '../src/interfaces/ComponentInfo';
-import {WriteOptions} from '../src/types';
+import {parseComponents} from '../core/parser';
+import {createSourceFile} from '../core/writer';
+import {ComponentInfo} from '../core/parser';
+import {WriteOptions} from '../types/types';
 
 /**
  * CLI configuration options

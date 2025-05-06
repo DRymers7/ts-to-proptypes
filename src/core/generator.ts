@@ -1,7 +1,7 @@
-import {ComponentInfo} from './interfaces/ComponentInfo';
-import {ParsedProp} from './interfaces/ParsedProp';
-import {NormalizedPropType} from './types';
-import {PROP_TYPE_VALIDATORS} from './constants';
+import {ComponentInfo} from './parser';
+import {ParsedProp} from './extractPropsFromParameter';
+import {NormalizedPropType} from '../types/types';
+import {PROP_TYPE_VALIDATORS} from '../constants';
 
 /**
  * Generates a PropTypes validator string based on a normalized TypeScript type.

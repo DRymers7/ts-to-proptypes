@@ -1,7 +1,7 @@
 import {describe, it, expect} from 'vitest';
-import {ComponentInfo} from '../src/interfaces/ComponentInfo';
-import {ParsedProp} from '../src/interfaces/ParsedProp';
-import generateComponentString from '../src/generator';
+import {ComponentInfo} from '../../src/core/parser';
+import {ParsedProp} from '../../src/core/extractPropsFromParameter';
+import generateComponentString from '../../src/core/generator';
 
 describe('generateComponentString tests', () => {
     // Basic tests

@@ -1,6 +1,18 @@
-import {ComponentInfo} from './interfaces/ComponentInfo';
 import {ExportedDeclarations, Node, SourceFile} from 'ts-morph';
 import parseComponentDeclaration from './parseComponentDeclaration';
+import {ParsedProp} from './extractPropsFromParameter';
+
+/**
+ * Interface representation of parsed component information. Should consist of:
+ * 1. Component name as string
+ * 2. List of parsed props in the component (functional or class)
+ * 3. Path to source file as string
+ */
+export interface ComponentInfo {
+    name: string;
+    props: ParsedProp[];
+    sourceFilePath: string;
+}
 
 /**
  * Export entry containing a name and its associated declarations

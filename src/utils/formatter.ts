@@ -1,7 +1,27 @@
 import {promises as fs} from 'fs';
 import path from 'path';
-import {FormatterOptions} from './interfaces/FormatterOptions';
-import {FormattingResult} from './interfaces/FormattingResult';
+
+/**
+ * Result of a formatting operation
+ */
+interface FormattingResult {
+    /** Path to the file that was processed */
+    filePath: string;
+    /** Whether formatting was successful */
+    success: boolean;
+    /** Error message if formatting failed */
+    error?: string;
+}
+
+/**
+ * Configuration options for the formatter
+ */
+interface FormatterOptions {
+    /** Enable verbose logging */
+    verbose?: boolean;
+    /** Custom Prettier configuration to use instead of auto-detected config */
+    prettierConfig?: Record<string, unknown>;
+}
 
 /**
  * Formats a collection of files using Prettier with project-specific configuration.

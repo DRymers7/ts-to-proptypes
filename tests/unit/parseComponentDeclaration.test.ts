@@ -1,6 +1,6 @@
 import {describe, it, expect} from 'vitest';
 import {Project} from 'ts-morph';
-import parseComponentDeclaration from '../src/parseComponentDeclaration';
+import parseComponentDeclaration from '../../src/core/parseComponentDeclaration';
 import ts from 'typescript';
 
 describe('parseComponentDeclaration', () => {

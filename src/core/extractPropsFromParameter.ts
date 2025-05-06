@@ -1,6 +1,18 @@
-import {ParsedProp} from './interfaces/ParsedProp';
 import {normalizePropType} from './normalizePropType';
 import {ParameterDeclaration, Symbol, SymbolFlags, Type} from 'ts-morph';
+import {NormalizedPropType} from '../types/types';
+
+/**
+ * Interface representation of a Prop. Should consist of:
+ * 1. Prop name as str
+ * 2. Prop type as NormalizedPropType type
+ * 3. Required (boolean)
+ */
+export interface ParsedProp {
+    name: string;
+    type: NormalizedPropType;
+    required: boolean;
+}
 
 /**
  * Extracts prop type information from a React component parameter declaration.

@@ -1,4 +1,4 @@
-import {NormalizedPropType} from './types';
+import {NormalizedPropType} from './types/types';
 
 /**
  * A mapping of PropTypes validator expressions for each normalized type kind
