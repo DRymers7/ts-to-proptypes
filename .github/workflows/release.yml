@@ -3,52 +3,47 @@ name: Release
 on:
   push:
     branches:
-      - master  
+      - master   
 
 permissions:
   contents: read
-  packages: write
+  packages: write    # gives GITHUB_TOKEN rights to publish packages
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-
     steps:
-      - name: Checkout code
+      - name: Check out code
         uses: actions/checkout@v4
 
       # ——————————————————————————
-      # 1) Publish to public npmjs.org
+      # 1. Build & publish to public npmjs.org
       # ——————————————————————————
-      - name: Setup Node (npmjs)
+      - name: Setup Node & Install deps
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://registry.npmjs.org'
           cache: 'npm'
-
-      - name: Install & Build
-        run: |
+      - run: |
           npm ci
           npm run build
 
       - name: Publish to npmjs.org
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: npm publish
+        run: npm publish --access public
 
       # ——————————————————————————
-      # 2) Publish to GitHub Packages
+      # 2. Publish to GitHub Packages
       # ——————————————————————————
-      - name: Setup Node (GitHub Packages)
-        uses: actions/setup-node@v4
-        with:
-          node-version: '18'
-          registry-url: 'https://npm.pkg.github.com'
-          scope: '@drymers'
-          cache: 'npm'
-          always-auth: true
-          auth-token: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Publish to GitHub Packages
-        run: npm publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # point @drymers/* at GH Packages
+          npm config set @drymers:registry https://npm.pkg.github.com
+          # use the built-in GITHUB_TOKEN for auth
+          npm config set //npm.pkg.github.com/:_authToken ${GITHUB_TOKEN}
+          # publish using that registry
+          npm publish --access public --registry https://npm.pkg.github.com
