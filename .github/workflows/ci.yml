@@ -20,6 +20,11 @@ jobs:
           node-version: '18'
           cache: 'npm'
 
-      - run: npm ci
-      - run: npm run lint
-      - run: npm test
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Ensure formatting
+        run: npm run format
+
+      - name: Run tests
+        run: npm run test
