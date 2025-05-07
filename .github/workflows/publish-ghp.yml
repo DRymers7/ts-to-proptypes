@@ -2,33 +2,48 @@ name: Publish to GitHub Packages
 
 on:
   push:
-    branches: [ master ]    
+    branches: [ main ]   # or master
 
 permissions:
   contents: read
-  packages: write       
+  packages: write      # gives GITHUB_TOKEN rights to publish
 
 jobs:
   publish-ghp:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Check out code
         uses: actions/checkout@v4
 
-      - name: Setup Node for GitHub Packages
+      # ────────────────────────────────────────────
+      # Override package name for GitHub Packages
+      # ────────────────────────────────────────────
+      - name: Set GH Packages scope
+        run: |
+          # temporarily switch name in package.json
+          npm pkg set name=@DRymers7/ts-to-proptypes
+        # no env needed here – this just edits package.json on disk
+
+      # ────────────────────────────────────────────
+      # Build with the new name in place
+      # ────────────────────────────────────────────
+      - name: Setup Node & Build
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@drymers'
+          scope: '@DRymers7'
           always-auth: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install & Build
+      - name: Install & Compile
         run: |
           npm ci
           npm run build
 
+      # ────────────────────────────────────────────
+      # Publish to GitHub Packages
+      # ────────────────────────────────────────────
       - name: Publish to GitHub Packages
         run: npm publish --access public
