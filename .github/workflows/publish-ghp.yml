@@ -29,7 +29,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@drymers7'
           always-auth: true
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GH_PACKAGES_TOKEN }}
 
       # 3) Install & build your code
       - name: Install & build
