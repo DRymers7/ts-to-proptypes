@@ -1,6 +1,9 @@
 {
-    "name": "ts-to-proptypes",
+    "name": "@drymers/ts-to-proptypes",
     "version": "1.0.0",
+    "publishConfig": {
+        "access": "public"
+    },
     "description": "Generate React PropTypes declarations automatically from TypeScript interfaces and types.",
     "main": "dist/index.js",
     "module": "dist/index.esm.js",
