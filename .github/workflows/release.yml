@@ -1,25 +1,26 @@
-# .github/workflows/release.yml
 name: Release
 
 on:
   push:
     branches:
-      - master   # or "main"
+      - master  
 
 permissions:
   contents: read
-  packages: write    # gives GITHUB_TOKEN rights to publish packages
+  packages: write
 
 jobs:
   publish:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Check out code
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      # 1) Build against the public npm registry
-      - name: Setup Node → npmjs.org
+      # ——————————————————————————
+      # 1) Publish to public npmjs.org
+      # ——————————————————————————
+      - name: Setup Node (npmjs)
         uses: actions/setup-node@v4
         with:
           node-version: '18'
@@ -36,16 +37,18 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish
 
-      # 2) Build/Pub to GitHub Packages for @drymers/ scoped package
-      - name: Setup Node → GitHub Packages
+      # ——————————————————————————
+      # 2) Publish to GitHub Packages
+      # ——————————————————————————
+      - name: Setup Node (GitHub Packages)
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://npm.pkg.github.com'
           scope: '@drymers'
           cache: 'npm'
+          always-auth: true
+          auth-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Publish to GitHub Packages
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm publish
