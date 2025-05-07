@@ -2,11 +2,11 @@ name: Publish to GitHub Packages
 
 on:
   push:
-    branches: [ master ]   
+    branches: [ master ]    
 
 permissions:
   contents: read
-  packages: write      # gives GITHUB_TOKEN rights to publish
+  packages: write        
 
 jobs:
   publish-ghp:
@@ -16,34 +16,27 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      # ────────────────────────────────────────────
-      # Override package name for GitHub Packages
-      # ────────────────────────────────────────────
-      - name: Set GH Packages scope
+      # 1) Override package name in memory to match your GitHub scope (lowercase)
+      - name: Point at DRymers7 scope
         run: |
-          # temporarily switch name in package.json
-          npm pkg set name=@DRymers7/ts-to-proptypes
-        # no env needed here – this just edits package.json on disk
+          npm pkg set name=@drymers7/ts-to-proptypes
 
-      # ────────────────────────────────────────────
-      # Build with the new name in place
-      # ────────────────────────────────────────────
-      - name: Setup Node & Build
+      # 2) Configure node to talk to GH Packages under that lowercase scope
+      - name: Setup node for GitHub Packages
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@DRymers7'
+          scope: '@drymers7'
           always-auth: true
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Install & Compile
+      # 3) Install & build your code
+      - name: Install & build
         run: |
           npm ci
           npm run build
 
-      # ────────────────────────────────────────────
-      # Publish to GitHub Packages
-      # ────────────────────────────────────────────
+      # 4) Publish to GH Packages explicitly against that registry
       - name: Publish to GitHub Packages
-        run: npm publish --access public
+        run: npm publish --registry https://npm.pkg.github.com --access public
