@@ -141,6 +141,26 @@ function extractPropsFromClassComponent(
  * @param declaration - The AST node of the component declaration
  * @param filePath - Path to the source file
  * @returns Component info object or null if not a valid component
+ * 
+ * @example
+ * ```typescript
+ * import { Project } from 'ts-morph';
+ * 
+ * const project = new Project();
+ * const sourceFile = project.createSourceFile('temp.tsx', `
+ *   export function Button({ label }: { label: string }) {
+ *     return <button>{label}</button>;
+ *   }
+ * `);
+ * 
+ * const exportedDecls = sourceFile.getExportedDeclarations();
+ * const buttonDecl = exportedDecls.get('Button')?.[0];
+ * 
+ * if (buttonDecl) {
+ *   const componentInfo = parseComponentDeclaration('Button', buttonDecl, 'temp.tsx');
+ *   // Now we have the component info with props
+ * }
+ * ```
  */
 function parseComponentDeclaration(
     exportName: string,

@@ -5,6 +5,7 @@ import {WriteOptions} from '../types/types';
 import {formatSingleFile} from '../utils/formatter';
 import path from 'path';
 import {SourceFile} from 'ts-morph';
+import { logger } from '../utils/logger';
 
 /**
  * Result of the file creation operation
@@ -78,11 +79,25 @@ function ensurePropTypesImport(file: SourceFile): void {
  * @returns Promise resolving to the result of the file creation
  *
  * @example
+ * ```typescript
+ * import { Project } from 'ts-morph';
+ * import { createSourceFile } from 'ts-to-proptypes';
+ * 
+ * const project = new Project();
+ * const componentInfo = {
+ *   name: 'Button',
+ *   props: [
+ *     { name: 'label', type: { kind: 'primitive', name: 'string' }, required: true }
+ *   ],
+ *   sourceFilePath: './Button.tsx'
+ * };
+ * 
  * // Create a separate PropTypes file
- * await createSourceFile(component, project, { outDir: './generated' });
- *
+ * await createSourceFile(componentInfo, project, { outDir: './generated' });
+ * 
  * // Append PropTypes to the original file and format with Prettier
- * await createSourceFile(component, project, { inline: true, prettier: true });
+ * await createSourceFile(componentInfo, project, { inline: true, prettier: true });
+ * ```
  */
 async function createSourceFile(
     componentInfo: ComponentInfo,
@@ -128,6 +143,7 @@ async function createSourceFile(
             filePath: outputPath,
         };
     } catch (error) {
+        logger.error(`Error creating PropTypes for ${componentInfo.name}`);
         return {
             success: false,
             filePath: componentInfo.sourceFilePath,

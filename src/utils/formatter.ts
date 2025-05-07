@@ -1,5 +1,6 @@
 import {promises as fs} from 'fs';
 import path from 'path';
+import {logger} from './logger';
 
 /**
  * Result of a formatting operation
@@ -33,6 +34,23 @@ interface FormatterOptions {
  * @param filePaths - Array of file paths to format
  * @param options - Configuration options for the formatter
  * @returns Promise resolving to an array of successfully formatted file paths
+ * 
+ * @example
+ * ```typescript
+ * import { formatWithPrettier } from 'ts-to-proptypes';
+ * 
+ * // Format multiple files
+ * const formattedPaths = await formatWithPrettier([
+ *   './generated/Button.propTypes.ts',
+ *   './generated/Card.propTypes.ts'
+ * ]);
+ * 
+ * // Format with custom options
+ * await formatWithPrettier(['./file.ts'], { 
+ *   verbose: true,
+ *   prettierConfig: { tabWidth: 2 }
+ * });
+ * ```
  */
 export async function formatWithPrettier(
     filePaths: readonly string[],
@@ -50,7 +68,7 @@ export async function formatWithPrettier(
         prettier = await import('prettier');
     } catch (error) {
         if (verbose) {
-            console.log('Prettier not available, skipping formatting');
+            logger.debug('Prettier not available, skipping formatting');
         }
         return [];
     }
@@ -65,7 +83,7 @@ export async function formatWithPrettier(
             (await prettier.resolveConfig(firstFileDir).catch(() => null));
 
         if (!prettierConfig && verbose) {
-            console.log(
+            logger.info(
                 'No Prettier configuration found, using default settings'
             );
         }
@@ -87,18 +105,18 @@ export async function formatWithPrettier(
             const successCount = results.filter((r) => r.success).length;
             results.forEach((result) => {
                 if (result.success) {
-                    console.log(
+                    logger.info(
                         `✓ Formatted ${path.basename(result.filePath)}`
                     );
                 } else {
-                    console.log(
+                    logger.info(
                         `⨯ Skipping ${path.basename(result.filePath)}: ${result.error}`
                     );
                 }
             });
 
             if (successCount > 0) {
-                console.log(
+                logger.info(
                     `Formatted ${successCount}/${filePaths.length} files`
                 );
             }
@@ -108,10 +126,10 @@ export async function formatWithPrettier(
         return results
             .filter((result) => result.success)
             .map((result) => result.filePath);
-    } catch (error) {
+    } catch (error: any) {
         // Fail silently
         if (verbose) {
-            console.log('Error during formatting process:', error);
+            logger.error('Error during formatting process:', error);
         }
         return [];
     }

@@ -4,13 +4,37 @@ import {NormalizedPropType} from '../types/types';
 import {PROP_TYPE_VALIDATORS} from '../constants';
 
 /**
- * Generates a PropTypes validator string based on a normalized TypeScript type.
+ * Generates the PropTypes declaration string for a React component.
  *
- * This function converts our internal type representation into the corresponding
- * PropTypes validator expression as a string.
+ * This function takes the component information with parsed props and generates
+ * a complete PropTypes declaration that can be added to the component file.
+ * It handles different prop types and their required/optional status.
  *
- * @param normalizedType - The normalized TypeScript type
- * @returns A string representation of the PropTypes validator
+ * @param componentInfo - Information about the component and its props
+ * @returns A string containing the complete PropTypes declaration
+ * 
+ * @example
+ * ```typescript
+ * import { generateComponentString } from 'ts-to-proptypes';
+ * 
+ * const componentInfo = {
+ *   name: 'Button',
+ *   props: [
+ *     { name: 'label', type: { kind: 'primitive', name: 'string' }, required: true },
+ *     { name: 'onClick', type: { kind: 'function' }, required: true },
+ *     { name: 'disabled', type: { kind: 'primitive', name: 'boolean' }, required: false }
+ *   ],
+ *   sourceFilePath: './Button.tsx'
+ * };
+ * 
+ * const propTypesString = generateComponentString(componentInfo);
+ * // Result:
+ * // Button.propTypes = {
+ * //   label: PropTypes.string.isRequired,
+ * //   onClick: PropTypes.func.isRequired,
+ * //   disabled: PropTypes.bool,
+ * // };
+ * ```
  */
 function generatePropTypeValidator(normalizedType: NormalizedPropType): string {
     const {kind} = normalizedType;

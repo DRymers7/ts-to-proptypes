@@ -35,9 +35,9 @@ class Logger {
         }
     }
 
-    error(message: string): void {
+    error(message: string, error?: Error): void {
         if (this.level >= LogLevel.ERROR) {
-            console.error(`[ERROR] ${message}`);
+            console.error(`[ERROR] ${message}; Error type: ${error}`);
         }
     }
 }

@@ -14,20 +14,3 @@ export class ParsingError extends PropTypesError {
         this.name = 'ParsingError';
     }
 }
-
-export class GenerationError extends PropTypesError {
-    constructor(
-        message: string,
-        public componentName: string
-    ) {
-        super(`Error generating PropTypes for ${componentName}: ${message}`);
-        this.name = 'GenerationError';
-    }
-}
-
-export class ValidationError extends PropTypesError {
-    constructor(message: string) {
-        super(`Validation error: ${message}`);
-        this.name = 'ValidationError';
-    }
-}

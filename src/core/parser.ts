@@ -1,6 +1,7 @@
 import {ExportedDeclarations, Node, SourceFile} from 'ts-morph';
 import parseComponentDeclaration from './parseComponentDeclaration';
 import {ParsedProp} from './extractPropsFromParameter';
+import { ParsingError } from '../types/error-types';
 
 /**
  * Interface representation of parsed component information. Should consist of:
@@ -47,14 +48,31 @@ function parseExportEntry(
  * arrow function components, and class components.
  *
  * @param sourceFile - The TypeScript source file to parse
- * @returns Promise resolving to an array of component information objects
+ * @returns Array of component information objects containing component names,
+ *          props, and source file paths
+ * 
+ * @example
+ * ```typescript
+ * import { Project } from 'ts-morph';
+ * import { parseComponents } from 'ts-to-proptypes';
+ * 
+ * const project = new Project();
+ * const sourceFile = project.addSourceFileAtPath('./MyComponent.tsx');
+ * const components = parseComponents(sourceFile);
+ * ```
  */
 function parseComponents(sourceFile: SourceFile): ComponentInfo[] {
-    const filePath = sourceFile.getFilePath();
-    const exports = sourceFile.getExportedDeclarations();
-    const exportEntries = Array.from(exports.entries());
-
-    return exportEntries.flatMap((entry) => parseExportEntry(entry, filePath));
+    try {
+        const filePath = sourceFile.getFilePath();
+        const exports = sourceFile.getExportedDeclarations();
+        const exportEntries = Array.from(exports.entries());
+        return exportEntries.flatMap((entry) => parseExportEntry(entry, filePath));
+    } catch (error) {
+        throw new ParsingError(
+            error instanceof Error ? error.message : String(error),
+            sourceFile.getFilePath()
+        )
+    }
 }
 
 export {parseComponents};

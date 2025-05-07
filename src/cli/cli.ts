@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import {logger, LogLevel} from '../utils/logger'
 import {Project, SourceFile} from 'ts-morph';
 import {Command} from 'commander';
 import path from 'path';
@@ -100,7 +101,7 @@ function filterSourceFiles(
     const globBasePath = sourceGlob.split('*')[0];
     const absoluteGlobBasePath = path.resolve(globBasePath);
     
-    console.log(`Source glob base path: ${absoluteGlobBasePath}`);
+    logger.info(`Source glob base path: ${absoluteGlobBasePath}`);
     
     return sourceFiles.filter((file) => {
         const filePath = file.getFilePath();
@@ -113,12 +114,12 @@ function filterSourceFiles(
                           !filePath.includes(absoluteGlobBasePath);
         
         if (isSrcFile) {
-            console.log(`Excluding source file: ${filePath}`);
+            logger.debug(`Excluding source file: ${filePath}`);
             return false;
         }
         
         if (!shouldInclude) {
-            console.log(`File outside target directory: ${filePath}`);
+            logger.debug(`File outside target directory: ${filePath}`);
             return false;
         }
         
@@ -129,8 +130,12 @@ function filterSourceFiles(
 /**
  * Processes a single source file to extract components
  *
+ * This function parses a TypeScript source file to identify React components
+ * and extract their props. It provides structured result information including
+ * success status, component count, and error details if applicable.
+ *
  * @param sourceFile - The source file to process
- * @returns Processing result with component information
+ * @returns Processing result with component information or error details
  */
 async function processSourceFile(
     sourceFile: SourceFile
@@ -140,9 +145,9 @@ async function processSourceFile(
         const components = parseComponents(sourceFile);
 
         if (components.length === 0) {
-            console.warn(`No components found in: ${filePath}`);
+            logger.warn(`No components found in: ${filePath}`);
         } else {
-            console.log(
+            logger.info(
                 `Found ${components.length} components in: ${filePath}`
             );
         }
@@ -153,7 +158,8 @@ async function processSourceFile(
             success: true,
             components,
         };
-    } catch (error) {
+    } catch (error: any) {
+        logger.error(`Error processing ${sourceFile.getFilePath()}: ${error instanceof Error ? error.message : String(error)}`, error);
         return {
             filePath: sourceFile.getFilePath(),
             componentCount: 0,
@@ -165,6 +171,10 @@ async function processSourceFile(
 
 /**
  * Generates PropTypes files for the components in a source file
+ *
+ * This function takes the components extracted from a source file and generates
+ * PropTypes declarations for each one, writing them to output files according
+ * to the specified options.
  *
  * @param fileResult - Result of processing a source file
  * @param project - The ts-morph Project instance
@@ -186,7 +196,7 @@ async function generatePropTypesFiles(
 
     for (const component of components) {
         if (!component.props || component.props.length === 0) {
-            console.log(`Skipping ${component.name}: No props found`);
+            logger.info(`Skipping ${component.name}: No props found`);
             continue;
         }
 
@@ -194,15 +204,15 @@ async function generatePropTypesFiles(
             const result = await createSourceFile(component, project, options);
 
             if (result.success) {
-                console.log(`Generated PropTypes for ${component.name}`);
+                logger.info(`Generated PropTypes for ${component.name}`);
                 successCount++;
             } else {
-                console.warn(
+                logger.warn(
                     `Failed to generate PropTypes for ${component.name}: ${result.error}`
                 );
             }
-        } catch (error) {
-            console.error(
+        } catch (error: any) {
+            logger.error(
                 `Error generating PropTypes for ${component.name}:`,
                 error
             );
@@ -217,6 +227,17 @@ async function generatePropTypesFiles(
  *
  * This function orchestrates the process of parsing TypeScript React components
  * and generating PropTypes declarations based on the provided command-line options.
+ * It handles source file discovery, component extraction, PropTypes generation,
+ * and file output.
+ * 
+ * The workflow is:
+ * 1. Parse command-line arguments
+ * 2. Setup the TypeScript project and file filtering
+ * 3. Process each source file to extract components
+ * 4. Generate PropTypes for each component
+ * 5. Write the results to output files or inline
+ * 
+ * @throws If there are fatal errors during execution
  */
 async function main(): Promise<void> {
     try {
@@ -239,7 +260,7 @@ async function main(): Promise<void> {
             options.source
         );
 
-        console.log(`Processing ${sourceFiles.length} source files...`);
+        logger.info(`Processing ${sourceFiles.length} source files...`);
 
         // Process each source file
         let totalComponents = 0;
@@ -256,8 +277,8 @@ async function main(): Promise<void> {
                     options
                 );
             } else {
-                console.error(
-                    `Error processing ${fileResult.filePath}: ${fileResult.error}`
+                logger.error(
+                    `Error processing ${fileResult.filePath}: ${fileResult.error}`,
                 );
             }
         }
@@ -269,19 +290,19 @@ async function main(): Promise<void> {
             await project.save();
         }
 
-        console.log('');
-        console.log('Summary:');
-        console.log(`Processed ${sourceFiles.length} files`);
-        console.log(`Found ${totalComponents} components`);
-        console.log(`Generated ${totalGeneratedFiles} PropTypes declarations`);
-    } catch (error) {
-        console.error('Fatal error:', error);
+        logger.info('');
+        logger.info('Summary:');
+        logger.info(`Processed ${sourceFiles.length} files`);
+        logger.info(`Found ${totalComponents} components`);
+        logger.info(`Generated ${totalGeneratedFiles} PropTypes declarations`);
+    } catch (error: any) {
+        logger.error('Fatal error:', error);
         process.exit(1);
     }
 }
 
 // Execute the main function
 main().catch((error) => {
-    console.error('Unhandled error:', error);
+    logger.error('Unhandled error:', error);
     process.exit(1);
 });

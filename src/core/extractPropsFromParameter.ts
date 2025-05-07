@@ -23,6 +23,25 @@ export interface ParsedProp {
  *
  * @param param - The parameter declaration object from ts-morph, typically the props parameter
  * @returns An array of parsed prop information with normalized type representations
+ * 
+ * @example
+ * ```typescript
+ * import { Project } from 'ts-morph';
+ * 
+ * const project = new Project();
+ * const sourceFile = project.createSourceFile('temp.tsx', `
+ *   type Props = { name: string; count?: number; };
+ *   function MyComponent({ name, count }: Props) { return null; }
+ * `);
+ * 
+ * const component = sourceFile.getFunctions()[0];
+ * const propsParam = component.getParameters()[0];
+ * const props = extractPropsFromParameter(propsParam);
+ * // Result: [
+ * //   { name: 'name', type: { kind: 'primitive', name: 'string' }, required: true },
+ * //   { name: 'count', type: { kind: 'primitive', name: 'number' }, required: false }
+ * // ]
+ * ```
  */
 function extractPropsFromParameter(param: ParameterDeclaration): ParsedProp[] {
     const rootType = param.getType();

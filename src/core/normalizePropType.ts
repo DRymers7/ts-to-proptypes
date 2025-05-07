@@ -1,5 +1,6 @@
 import {Type} from 'ts-morph';
 import {NormalizedPropType} from '../types/types';
+import { logger } from '../utils/logger';
 
 /**
  * Type guard to check if a union type contains an undefined type
@@ -301,6 +302,19 @@ function normalizeUnionType(type: Type): NormalizedPropType {
  *
  * @param type - The TypeScript type to normalize
  * @returns A normalized representation of the type for PropTypes generation
+ * 
+ * @example
+ * ```typescript
+ * // Normalize a string type
+ * const stringType = getTypeFromDeclaration("string");
+ * const normalized = normalizePropType(stringType);
+ * // Result: { kind: 'primitive', name: 'string' }
+ * 
+ * // Normalize a union type
+ * const unionType = getTypeFromDeclaration("string | number");
+ * const normalized = normalizePropType(unionType);
+ * // Result: { kind: 'oneOfType', types: [{ kind: 'primitive', name: 'string' }, { kind: 'primitive', name: 'number' }] }
+ * ```
  */
 export function normalizePropType(type: Type): NormalizedPropType {
     const typeText = type.getText();
@@ -308,6 +322,7 @@ export function normalizePropType(type: Type): NormalizedPropType {
     // Handle optional types first as a special case
     const optionalType = handleOptionalType(type, typeText);
     if (optionalType) {
+        logger.debug(`Optional type: ${optionalType}`)
         return optionalType;
     }
 
@@ -325,24 +340,29 @@ export function normalizePropType(type: Type): NormalizedPropType {
 
     // Handle union types
     if (type.isUnion()) {
+        logger.debug(`Handling union type: ${type}`)
         return normalizeUnionType(type);
     }
 
     // Handle array types
     if (type.isArray() || type.isTuple() || typeText.endsWith('[]')) {
+        logger.debug(`Handling array type: ${type}`)
         return {kind: 'array'};
     }
 
     // Handle function types
     if (type.getCallSignatures().length > 0) {
+        logger.debug(`Handling function type: ${type}`)
         return {kind: 'function'};
     }
 
     // Handle object types
     if (type.isObject()) {
+        logger.debug(`Handling debug type: ${type}`)
         return {kind: 'object'};
     }
 
     // Default to any for unrecognized types
     return {kind: 'any'};
+
 }
