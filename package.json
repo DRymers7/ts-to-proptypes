@@ -22,6 +22,7 @@
         "test": "vitest",
         "test:ui": "vitest --ui",
         "test:watch": "vitest --watch",
+        "test:unit": "vitest run tests/unit",
         "test:integration": "vitest run tests/integration/integration.test.js",
         "format": "prettier . --write",
         "lint": "eslint . --ext .ts,.tsx",
