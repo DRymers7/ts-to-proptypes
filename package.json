@@ -25,7 +25,8 @@
         "test:integration": "vitest run tests/integration/integration.test.js",
         "format": "prettier . --write",
         "lint": "eslint . --ext .ts,.tsx",
-        "prepublishOnly": "npm run build"
+        "prepublishOnly": "npm run build",
+        "generate-proptypes": "ts-to-proptypes -s \"src/components/**/*.tsx\" -o \"src/proptypes\""
     },
     "engines": {
         "node": ">=14.0.0"

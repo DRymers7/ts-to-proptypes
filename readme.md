@@ -1,3 +1,9 @@
+![npm version](https://img.shields.io/npm/v/ts-to-proptypes)
+![build status](https://img.shields.io/github/actions/workflow/status/DRymers7/ts-to-proptypes/ci.yml?branch=main)
+![license](https://img.shields.io/github/license/DRymers7/ts-to-proptypes)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.9%2B-blue)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+
 # ts-to-proptypes
 
 Generate React PropTypes declarations automatically from TypeScript interfaces and types.
@@ -26,6 +32,18 @@ yarn add ts-to-proptypes --dev
 
 # Using pnpm
 pnpm add -D ts-to-proptypes
+```
+
+#### Installing from GitHub Packages
+Add this to your project's .npmrc file:
+
+```bash 
+@drymers:registry=https://npm.pkg.github.com
+```
+Then, install normally 
+
+```bash
+npm install @drymers/ts-to-proptypes --save-dev
 ```
 
 ## Features
