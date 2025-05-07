@@ -1,3 +1,9 @@
+![npm version](https://img.shields.io/npm/v/ts-to-proptypes)
+![build status](https://img.shields.io/github/actions/workflow/status/DRymers7/ts-to-proptypes/ci.yml?branch=main)
+![license](https://img.shields.io/github/license/DRymers7/ts-to-proptypes)
+![TypeScript](https://img.shields.io/badge/TypeScript-4.9%2B-blue)
+![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
+
 # ts-to-proptypes
 
 Generate React PropTypes declarations automatically from TypeScript interfaces and types.
@@ -18,14 +24,22 @@ This tool is particularly useful for projects that:
 Install the package as a development dependency:
 
 ```bash
-# Using npm
-npm install ts-to-proptypes --save-dev
+# Using npm (public npm)
+npm install @drymers/ts-to-proptypes --save-dev
 
 # Using yarn
-yarn add ts-to-proptypes --dev
+yarn add @drymers/ts-to-proptypes --save-dev
+
 
 # Using pnpm
-pnpm add -D ts-to-proptypes
+pnpm add -D @drymers/ts-to-proptypes --save-dev
+```
+
+#### Installing from GitHub Packages
+(ensure your project .npmrc has @drymers:registry=https://npm.pkg.github.com)
+
+```bash
+npm install @drymers/ts-to-proptypes --save-dev
 ```
 
 ## Features
@@ -42,109 +56,99 @@ pnpm add -D ts-to-proptypes
 
 ## Usage
 
-### Command Line Interface
+### Quick CLI
 
-The basic usage of the CLI is:
+Run once with `npx`:
 
 ```bash
-npx ts-to-proptypes -s "src/components/**/*.tsx" -o "output"
+npx ts-to-proptypes \
+  -s "src/components/**/*.tsx" \
+  -o "src/proptypes"
 ```
 
-For persistent usage, add it to your package.json scripts:
+#### Common flags
 
-```json
+* `-s, --source <glob>`
+  Glob pattern for input files (default: `src/**/*.tsx`)
+* `-o, --outDir <dir>`
+  Where to write generated files (default: current working dir)
+* `--inline`
+  Append `propTypes` definitions directly into each source file
+* `--prettier`
+  Run Prettier on the generated output
+
+---
+
+### Via npm Script
+
+Add this to your `package.json`:
+
+```jsonc
 "scripts": {
   "generate-proptypes": "ts-to-proptypes -s \"src/components/**/*.tsx\" -o \"src/proptypes\""
 }
 ```
 
+Now simply run:
+
+```bash
+npm run generate-proptypes
+```
+
+You can combine flags as needed:
+
+```bash
+npm run generate-proptypes -- --inline --prettier
+```
+
+---
+
 ### Example
 
-Given a TypeScript component:
+Given `src/Button.tsx`:
 
 ```tsx
-// Button.tsx
 import React from 'react';
 
 type ButtonProps = {
-    label: string;
-    onClick: () => void;
-    variant?: 'primary' | 'secondary' | 'danger';
-    disabled?: boolean;
+  label: string;
+  onClick: () => void;
+  disabled?: boolean;
 };
 
-export function Button({
-    label,
-    onClick,
-    variant = 'primary',
-    disabled = false,
-}: ButtonProps) {
-    return (
-        <button
-            onClick={onClick}
-            className={`btn btn-${variant}`}
-            disabled={disabled}
-        >
-            {label}
-        </button>
-    );
+export function Button({ label, onClick, disabled = false }: ButtonProps) {
+  return (
+    <button onClick={onClick} disabled={disabled}>
+      {label}
+    </button>
+  );
 }
 ```
 
-`ts-to-proptypes` generates:
+Running:
 
-```tsx
-// Button.propTypes.ts
+```bash
+npx ts-to-proptypes -s "src/Button.tsx" -o "src/proptypes"
+```
+
+Produces `src/proptypes/Button.propTypes.ts`:
+
+```ts
 import PropTypes from 'prop-types';
 
 Button.propTypes = {
-    label: PropTypes.string.isRequired,
-    onClick: PropTypes.func.isRequired,
-    variant: PropTypes.string,
-    disabled: PropTypes.bool,
+  label: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired,
+  disabled: PropTypes.bool,
 };
 ```
 
-### Inline Mode
+And with inline mode:
 
-With the `--inline` flag, PropTypes are added directly to the component file:
-
-```tsx
-// Button.tsx after inline generation
-import React from 'react';
-import PropTypes from 'prop-types';
-
-type ButtonProps = {
-    label: string;
-    onClick: () => void;
-    variant?: 'primary' | 'secondary' | 'danger';
-    disabled?: boolean;
-};
-
-export function Button({
-    label,
-    onClick,
-    variant = 'primary',
-    disabled = false,
-}: ButtonProps) {
-    return (
-        <button
-            onClick={onClick}
-            className={`btn btn-${variant}`}
-            disabled={disabled}
-        >
-            {label}
-        </button>
-    );
-}
-
-Button.propTypes = {
-    label: PropTypes.string.isRequired,
-    onClick: PropTypes.func.isRequired,
-    variant: PropTypes.string,
-    disabled: PropTypes.bool,
-};
+```bash
+npx ts-to-proptypes -s "src/Button.tsx" --inline
 ```
+The original src/Button.tsx is updated to include the propTypes block directly below your component.
 
 ## Command Line Options
 
