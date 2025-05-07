@@ -6,7 +6,7 @@ on:
 
 permissions:
   contents: read
-  packages: write        # grants GITHUB_TOKEN the right to publish
+  packages: write       
 
 jobs:
   publish-ghp:
@@ -23,7 +23,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@drymers'
           always-auth: true
-          auth-token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install & Build
         run: |
