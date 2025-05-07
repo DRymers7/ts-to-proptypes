@@ -2,11 +2,11 @@ name: Publish to GitHub Packages
 
 on:
   push:
-    branches: [ master ]
+    branches: [ master ]    
 
 permissions:
   contents: read
-  packages: write
+  packages: write        # grants GITHUB_TOKEN the right to publish
 
 jobs:
   publish-ghp:
@@ -23,6 +23,7 @@ jobs:
           registry-url: 'https://npm.pkg.github.com'
           scope: '@drymers'
           always-auth: true
+          auth-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install & Build
         run: |
@@ -30,6 +31,4 @@ jobs:
           npm run build
 
       - name: Publish to GitHub Packages
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm publish --access public --registry https://npm.pkg.github.com
+        run: npm publish --access public
