@@ -1,8 +1,8 @@
 import {describe, it, expect} from 'vitest';
 import {Project} from 'ts-morph';
-import {createSourceFile} from '../src/writer';
-import {ComponentInfo} from '../src/interfaces/ComponentInfo';
-import {WriteOptions} from '../src/types';
+import {createSourceFile} from '../../src/core/writer';
+import {ComponentInfo} from '../../src/core/parser';
+import {WriteOptions} from '../../src/types/types';
 
 /**
  * Test suite for file writing logic. If working as intended, this module
@@ -15,8 +15,16 @@ describe('createSourceFile', () => {
             name: 'TestComponent',
             sourceFilePath: 'src/components/TestComponent.tsx',
             props: [
-                {name: 'title', type: 'string', required: true},
-                {name: 'count', type: 'number', required: false},
+                {
+                    name: 'title',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: true,
+                },
+                {
+                    name: 'count',
+                    type: {kind: 'primitive', name: 'number'},
+                    required: false,
+                },
             ],
         };
 
@@ -55,7 +63,18 @@ describe('createSourceFile', () => {
         const mockComponent: ComponentInfo = {
             name: 'TestComponent',
             sourceFilePath: 'src/components/TestComponent.tsx',
-            props: [{name: 'foo', type: 'boolean', required: true}],
+            props: [
+                {
+                    name: 'title',
+                    type: {kind: 'primitive', name: 'string'},
+                    required: true,
+                },
+                {
+                    name: 'count',
+                    type: {kind: 'primitive', name: 'number'},
+                    required: false,
+                },
+            ],
         };
 
         await createSourceFile(mockComponent, project, {
