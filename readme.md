@@ -1,5 +1,5 @@
 ![npm version](https://img.shields.io/npm/v/ts-to-proptypes)
-![build status](https://github.com/DRymers7/ts-to-proptypes/actions/workflows/publish.yml/badge.svg)
+![build status](https://github.com/DRymers7/ts-to-proptypes/actions/workflows/publish-package.yml/badge.svg)
 ![license](https://img.shields.io/github/license/DRymers7/ts-to-proptypes)
 ![TypeScript](https://img.shields.io/badge/TypeScript-4.9%2B-blue)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)
