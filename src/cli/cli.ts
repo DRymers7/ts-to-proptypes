@@ -93,10 +93,7 @@ function filterSourceFiles(
     sourceFiles: readonly SourceFile[],
     packageDir: string,
     sourceGlob: string
-): SourceFile[] {
-    // Convert glob pattern to a regex-safe string (escape special chars)
-    const escapeRegExp = (string: string) => string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    
+): SourceFile[] {    
     // Get the base directory of the source glob (everything before the first wildcard)
     const globBasePath = sourceGlob.split('*')[0];
     const absoluteGlobBasePath = path.resolve(globBasePath);
