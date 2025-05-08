@@ -255,3 +255,9 @@ This tool builds on the excellent work of:
 - Support for function and arrow function components
 - CLI with source, output, inline, and prettier options
 - TypeScript to PropTypes mapping for basic types
+
+### 1.0.X
+
+ - Improvements to documentation
+ - Implementation of automated publishing
+ - Small code cleanup
