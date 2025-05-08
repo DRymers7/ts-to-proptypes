@@ -100,7 +100,7 @@ jobs:
           
           echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
 
-      # Create Pull Request for version update
+      # Create Pull Request for version update to update package.json
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
