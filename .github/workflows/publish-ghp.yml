@@ -16,27 +16,28 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
 
-      # 1) Override package name in memory to match your GitHub scope (lowercase)
-      - name: Point at DRymers7 scope
+      # 1) Package name must match GitHub username EXACTLY (case-sensitive)
+      - name: Set correct package scope
         run: |
-          npm pkg set name=@drymers7/ts-to-proptypes
+          npm pkg set name=@DRymers7/ts-to-proptypes
 
-      # 2) Configure node to talk to GH Packages under that lowercase scope
+      # 2) Configure node with correct case-sensitive scope
       - name: Setup node for GitHub Packages
         uses: actions/setup-node@v4
         with:
           node-version: '18'
           registry-url: 'https://npm.pkg.github.com'
-          scope: '@drymers7'
+          scope: '@DRymers7'
           always-auth: true
-          token: ${{ secrets.GH_PACKAGES_TOKEN }}
 
-      # 3) Install & build your code
+      # 3) Install & build
       - name: Install & build
         run: |
           npm ci
           npm run build
 
-      # 4) Publish to GH Packages explicitly against that registry
+      # 4) Publish with correct authentication
       - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm publish --registry https://npm.pkg.github.com --access public
