@@ -4,11 +4,12 @@ on:
   push:
     branches: [ master ]
     paths-ignore:
-      - 'package.json'  # Ignore runs triggered by our own version updates
+      - 'package.json'
 
 permissions:
   contents: write
   packages: write
+  pull-requests: write
 
 jobs:
   publish:
@@ -30,21 +31,13 @@ jobs:
 
       - name: Configure git
         run: |
-          git config user.name 'GitHub Actions'
-          git config user.email 'github-actions@github.com'
-
-      - name: Increment version
-        id: version-bump
-        run: |
-          # Use npm's built-in version command
-          NEW_VERSION=$(npm version patch -m "chore: bump version to %s [skip ci]")
-          # Remove the 'v' prefix for later use
-          NEW_VERSION=${NEW_VERSION:1}
-          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
 
       - name: Build package
         run: npm run build
 
+      # Publishing steps - done before version update
       # Step 1: Publish to GitHub Packages
       - name: Setup Node for GitHub Packages
         uses: actions/setup-node@v4
@@ -76,6 +69,47 @@ jobs:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: npm publish --access public
 
-      # Push the changes back to the repository
-      - name: Push changes to GitHub
-        run: git push origin master --follow-tags
+      # Create new branch with version bump
+      - name: Create version update branch
+        id: version-branch
+        run: |
+          # Get current version
+          CURRENT_VERSION=$(node -p "require('./package.json').version")
+          echo "Current version: $CURRENT_VERSION"
+          
+          # Calculate new version (increment patch version)
+          PARTS=(${CURRENT_VERSION//./ })
+          MAJOR=${PARTS[0]}
+          MINOR=${PARTS[1]}
+          PATCH=$((${PARTS[2]} + 1))
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> $GITHUB_OUTPUT
+          
+          # Create a new branch
+          BRANCH_NAME="version-bump-$NEW_VERSION"
+          git checkout -b $BRANCH_NAME
+          
+          # Update version in package.json
+          npm version $NEW_VERSION --no-git-tag-version
+          
+          # Commit and push to the new branch
+          git add package.json
+          git commit -m "chore: bump version to $NEW_VERSION [skip ci]"
+          git push origin $BRANCH_NAME
+          
+          echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
+
+      # Create Pull Request for version update
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: "chore: bump version to ${{ steps.version-branch.outputs.new_version }}"
+          body: |
+            This PR automatically updates the package version after a successful publish.
+            
+            Version: ${{ steps.version-branch.outputs.new_version }}
+          branch: ${{ steps.version-branch.outputs.branch_name }}
+          base: master
+          labels: "automated,version-bump"
