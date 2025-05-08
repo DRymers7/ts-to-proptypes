@@ -112,4 +112,3 @@ jobs:
             Version: ${{ steps.version-branch.outputs.new_version }}
           branch: ${{ steps.version-branch.outputs.branch_name }}
           base: master
-          labels: "automated,version-bump"
