@@ -2,6 +2,7 @@ import {describe, it, expect} from 'vitest';
 import {parseComponents} from '../../src/core/parser';
 import {Project} from 'ts-morph';
 
+// Tests for parser.ts
 describe('parser', () => {
     const createMockSourceFile = (code: string) => {
         const project = new Project();
