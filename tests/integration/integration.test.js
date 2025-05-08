@@ -3,7 +3,7 @@ import path from 'path';
 import {execSync} from 'child_process';
 import {describe, it, expect, beforeAll, afterAll} from 'vitest';
 
-// Directories for test files
+// test directories
 const TEST_DIR = path.join(process.cwd(), 'tests/integration');
 const INPUT_DIR = path.join(TEST_DIR, 'fixtures');
 const OUTPUT_DIR = path.join(TEST_DIR, 'output');
