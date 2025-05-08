@@ -5,6 +5,8 @@ on:
     branches: [ master ]
     paths-ignore:
       - 'package.json'
+      - 'package-lock.json'
+      - 'readme.md'
 
 permissions:
   contents: write
