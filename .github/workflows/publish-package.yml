@@ -1,0 +1,59 @@
+name: Publish Package
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build package
+        run: npm run build
+
+      # Step 1: Publish to GitHub Packages
+      - name: Setup Node for GitHub Packages
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://npm.pkg.github.com'
+          scope: '@DRymers7'
+
+      - name: Set GitHub Packages scope
+        run: npm pkg set name=@DRymers7/ts-to-proptypes
+
+      - name: Publish to GitHub Packages
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npm publish --registry https://npm.pkg.github.com --access public
+
+      # Step 2: Publish to npm.org
+      - name: Setup Node for npm
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Restore original package name
+        run: npm pkg set name=@drymers/ts-to-proptypes
+
+      - name: Publish to npm.org
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npm publish --access public
