@@ -3,9 +3,11 @@ name: Publish Package
 on:
   push:
     branches: [ master ]
+    paths-ignore:
+      - 'package.json'  # Ignore runs triggered by our own version updates
 
 permissions:
-  contents: write  # Needed for pushing changes
+  contents: write
   packages: write
 
 jobs:
@@ -15,7 +17,7 @@ jobs:
       - name: Check out code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Fetch all history for tags
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -29,9 +31,9 @@ jobs:
       - name: Configure git
         run: |
           git config user.name 'GitHub Actions'
-          git config user.email 'actions@github.com'
+          git config user.email 'github-actions@github.com'
 
-      - name: Automatic version bump
+      - name: Increment version
         id: version-bump
         run: |
           # Get current version
